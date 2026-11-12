@@ -1,0 +1,324 @@
+"use client";
+
+import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, type ReactNode } from "react";
+import { Bell, ChevronsUpDown, LogOut, Mail, Menu as MenuIcon, Search, Settings, UserRound, X, FlaskRound } from "lucide-react";
+import { brand, features } from "@/config/brand";
+import { isActive, MOBILE_TABS, navFor, PRIMARY_NAV, type NavItem } from "@/config/navigation";
+import { ROLES, roleShort } from "@/config/taxonomy";
+import { useAppState } from "@/lib/store/store";
+import { unreadCount } from "@/lib/store/selectors";
+import { signOut, switchDemoRole } from "@/lib/store/actions";
+import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/ui/primitives";
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from "@/components/ui/overlay";
+import { toast } from "@/components/ui/toast";
+import { Logo } from "./logo";
+import { GlobalSearch } from "./global-search";
+
+function NavLink({ item, pathname, onNavigate }: { item: NavItem; pathname: string; onNavigate?: () => void }) {
+  const active = isActive(pathname, item.href);
+  const Icon = item.icon;
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={cn("relative flex h-9 items-center gap-3 rounded-sm px-3 text-ui transition-colors", active ? "bg-surface font-medium text-ink" : "text-sub hover:bg-surface/70 hover:text-ink")}
+    >
+      {active && <motion.span layoutId="nav-indicator" className="absolute -left-3 top-2 h-5 w-[2px] rounded-full bg-accent" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
+      <Icon size={17} strokeWidth={active ? 2 : 1.7} aria-hidden />
+      {item.label}
+    </Link>
+  );
+}
+
+function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  const s = useAppState();
+  const extra = navFor(s.user?.role);
+  return (
+    <nav aria-label="Main" className="flex flex-col gap-0.5">
+      {PRIMARY_NAV.map((n) => (
+        <NavLink key={n.href} item={n} pathname={pathname} onNavigate={onNavigate} />
+      ))}
+      {extra.length > 0 && (
+        <>
+          <div className="mx-3 my-3 h-px bg-line" />
+          <p className="mb-1 px-3 text-micro text-mute">For your role</p>
+          {extra.map((n) => (
+            <NavLink key={n.href} item={n} pathname={pathname} onNavigate={onNavigate} />
+          ))}
+        </>
+      )}
+    </nav>
+  );
+}
+
+/** Development/demo-only. Changes which interface is shown; grants no real permission. */
+export function DemoRoleSwitcher({ side = "top" }: { side?: "top" | "bottom" }) {
+  const s = useAppState();
+  const router = useRouter();
+  if (!features.demoTools || !s.user) return null;
+  return (
+    <Menu
+      label="Switch demo role"
+      side={side}
+      align="start"
+      trigger={({ toggle, open, id }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-controls={open ? id : undefined}
+          className="flex w-full items-center gap-2.5 rounded-sm border border-dashed border-line-strong px-3 py-2 text-left transition-colors hover:border-ink"
+        >
+          <FlaskRound size={15} className="shrink-0 text-sub" aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block text-micro text-mute">Demo role</span>
+            <span className="block truncate text-meta font-medium text-ink">{roleShort(s.user!.role)}</span>
+          </span>
+          <ChevronsUpDown size={14} className="text-mute" aria-hidden />
+        </button>
+      )}
+    >
+      {(close) => (
+        <>
+          <MenuLabel>Preview the interface for a role. This is a demo tool, not access control.</MenuLabel>
+          {ROLES.map((r) => (
+            <MenuItem
+              key={r.id}
+              active={s.user?.role === r.id}
+              onSelect={() => {
+                switchDemoRole(r.id);
+                close();
+                toast(`Viewing as ${r.label}`, { body: "Demo role switch. Permissions are not enforced in Phase 1." });
+                router.push(r.id === "platform_admin" ? "/admin" : r.id === "institution_admin" ? "/institution" : "/home");
+              }}
+            >
+              {r.label}
+            </MenuItem>
+          ))}
+        </>
+      )}
+    </Menu>
+  );
+}
+
+function UserMenu({ compact }: { compact?: boolean }) {
+  const s = useAppState();
+  const router = useRouter();
+  if (!s.user) return null;
+  return (
+    <Menu
+      label="Account"
+      trigger={({ toggle, open, id }) => (
+        <button type="button" onClick={toggle} aria-haspopup="menu" aria-expanded={open} aria-controls={open ? id : undefined} aria-label="Open account menu" className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80">
+          <Avatar name={s.user!.name} size={compact ? 30 : 32} me />
+        </button>
+      )}
+    >
+      {(close) => (
+        <>
+          <div className="px-2.5 pb-2 pt-1.5">
+            <p className="text-ui font-medium text-ink">{s.user!.name}</p>
+            <p className="text-meta text-sub">{s.user!.email}</p>
+          </div>
+          <MenuSeparator />
+          <MenuItem icon={<UserRound size={15} />} onSelect={() => (close(), router.push("/profile"))}>
+            Your profile
+          </MenuItem>
+          <MenuItem icon={<Settings size={15} />} onSelect={() => (close(), router.push("/settings"))}>
+            Settings
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem
+            icon={<LogOut size={15} />}
+            onSelect={() => {
+              close();
+              signOut();
+              router.push("/login");
+            }}
+          >
+            Sign out
+          </MenuItem>
+        </>
+      )}
+    </Menu>
+  );
+}
+
+function IconLink({ href, label, count, children }: { href: string; label: string; count?: number; children: ReactNode }) {
+  const pathname = usePathname();
+  const active = isActive(pathname, href);
+  return (
+    <Link href={href} aria-label={count ? `${label}, ${count} unread` : label} className={cn("relative flex h-9 w-9 items-center justify-center rounded-sm transition-colors", active ? "bg-surface text-ink" : "text-sub hover:bg-surface hover:text-ink")}>
+      {children}
+      {!!count && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-paper bg-accent" />}
+    </Link>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const s = useAppState();
+  const [drawer, setDrawer] = useState(false);
+  const [mobileSearch, setMobileSearch] = useState(false);
+  const unread = unreadCount(s);
+
+  // Close overlays when the route changes (adjusting state during render, per React guidance).
+  const [prevPath, setPrevPath] = useState(pathname);
+  if (prevPath !== pathname) {
+    setPrevPath(pathname);
+    setDrawer(false);
+    setMobileSearch(false);
+  }
+  const router = useRouter();
+
+  return (
+    <div className="min-h-dvh bg-paper">
+      <a href="#main" className="sr-only z-[90] rounded-sm bg-ink px-3 py-2 text-white focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
+        Skip to content
+      </a>
+
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-line bg-paper px-3 pb-4 pt-5 lg:flex">
+        <div className="mb-7 px-3">
+          <Logo href="/home" showSignature />
+        </div>
+        <div className="scrollbar-none flex-1 overflow-y-auto pl-3 -ml-3">
+          <NavList pathname={pathname} />
+        </div>
+        <div className="mt-4 flex flex-col gap-3">
+          <DemoRoleSwitcher />
+          <p className="px-1 text-micro leading-snug text-mute">{brand.signature}</p>
+        </div>
+      </aside>
+
+      {/* Top bar */}
+      <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur-md lg:ml-60">
+        <div className="flex h-14 items-center gap-3 px-4 md:px-6">
+          <div className="lg:hidden">
+            <Logo href="/home" />
+          </div>
+          <GlobalSearch className="hidden max-w-md flex-1 md:block" />
+          <div className="ml-auto flex items-center gap-1">
+            <button type="button" aria-label="Search" onClick={() => setMobileSearch((v) => !v)} className="flex h-9 w-9 items-center justify-center rounded-sm text-sub hover:bg-surface hover:text-ink md:hidden">
+              <Search size={18} />
+            </button>
+            <IconLink href="/messages" label="Messages">
+              <Mail size={18} strokeWidth={1.7} />
+            </IconLink>
+            <IconLink href="/notifications" label="Notifications" count={unread}>
+              <Bell size={18} strokeWidth={1.7} />
+            </IconLink>
+            <div className="ml-1.5 hidden sm:block">
+              <UserMenu />
+            </div>
+          </div>
+        </div>
+        <AnimatePresence initial={false}>
+          {mobileSearch && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-visible px-4 pb-3 md:hidden">
+              <GlobalSearch autoFocus onNavigate={() => setMobileSearch(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+
+      <main id="main" className="lg:ml-60">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          className="mx-auto w-full max-w-[1180px] px-4 pb-28 pt-6 md:px-8 md:pt-8 lg:pb-16"
+        >
+          {children}
+        </motion.div>
+      </main>
+
+      {/* Mobile tab bar */}
+      <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden">
+        <ul className="grid grid-cols-5">
+          {MOBILE_TABS.map((href) => {
+            const item = PRIMARY_NAV.find((n) => n.href === href)!;
+            const Icon = item.icon;
+            const active = isActive(pathname, href);
+            return (
+              <li key={href}>
+                <Link href={href} aria-current={active ? "page" : undefined} className={cn("relative flex h-14 flex-col items-center justify-center gap-1 text-[0.6875rem]", active ? "text-ink" : "text-mute")}>
+                  {active && <motion.span layoutId="tab-indicator" className="absolute top-0 h-[2px] w-8 rounded-full bg-accent" />}
+                  <Icon size={19} strokeWidth={active ? 2 : 1.6} aria-hidden />
+                  {item.label === "AI Researcher" ? "Research" : item.label}
+                </Link>
+              </li>
+            );
+          })}
+          <li>
+            <button type="button" onClick={() => setDrawer(true)} aria-expanded={drawer} aria-controls="mobile-drawer" className="flex h-14 w-full flex-col items-center justify-center gap-1 text-[0.6875rem] text-mute">
+              <MenuIcon size={19} strokeWidth={1.6} aria-hidden />
+              More
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {drawer && (
+          <div className="fixed inset-0 z-[60] lg:hidden" id="mobile-drawer">
+            <motion.div className="absolute inset-0 bg-ink/30" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setDrawer(false)} />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute inset-y-0 right-0 flex w-[min(320px,86vw)] flex-col bg-paper px-4 pb-6 pt-4 shadow-overlay"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                {s.user && (
+                  <Link href="/profile" className="flex items-center gap-2.5" onClick={() => setDrawer(false)}>
+                    <Avatar name={s.user.name} size={34} me />
+                    <span>
+                      <span className="block text-ui font-medium">{s.user.name}</span>
+                      <span className="block text-micro text-sub">View profile</span>
+                    </span>
+                  </Link>
+                )}
+                <button type="button" aria-label="Close navigation" onClick={() => setDrawer(false)} className="rounded-sm p-2 text-sub hover:bg-surface">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto pl-3">
+                <NavList pathname={pathname} onNavigate={() => setDrawer(false)} />
+                <div className="mx-3 my-3 h-px bg-line" />
+                <div className="flex flex-col gap-0.5">
+                  <NavLink item={{ href: "/settings", label: "Settings", icon: Settings }} pathname={pathname} onNavigate={() => setDrawer(false)} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      signOut();
+                      router.push("/login");
+                    }}
+                    className="flex h-9 items-center gap-3 rounded-sm px-3 text-ui text-sub hover:bg-surface hover:text-ink"
+                  >
+                    <LogOut size={17} strokeWidth={1.7} aria-hidden /> Sign out
+                  </button>
+                </div>
+              </div>
+              <div className="mt-4">
+                <DemoRoleSwitcher />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
