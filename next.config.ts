@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
+  env: {
+    // Vercel sets VERCEL_ENV ("production" | "preview" | "development") during the build.
+    // Inlined so src/config/brand.ts can force developer tools off in Production builds.
+    TRUEVIX_DEPLOY_ENV: process.env.VERCEL_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV ?? "",
+  },
   partialPrefetching: true,
   async headers() {
     return [

@@ -14,6 +14,7 @@ import type {
   ValidationWorkspace,
 } from "@/lib/types";
 import { VALIDATION_SECTIONS } from "@/config/taxonomy";
+import { features } from "@/config/brand";
 import { uid } from "@/lib/utils";
 import { getState, setState } from "./store";
 import type { AppState, NotificationPrefs, PrivacyPrefs } from "./state";
@@ -72,7 +73,9 @@ const PERSONA_NAMES: Record<RoleId, { name: string; headline: string; org: strin
   platform_admin: { name: "Platform Operator", headline: "Trust and safety, platform operations", org: "Platform team", interests: ["ai"] },
 };
 
+/** Developer tools only. A no-op in builds where developer tools are disabled. */
 export function signInAsPersona(role: RoleId) {
+  if (!features.devTools) return;
   const p = PERSONA_NAMES[role];
   const user: CurrentUser = {
     id: "me",
@@ -119,6 +122,7 @@ export function completeOnboarding(patch: Partial<Omit<CurrentUser, "id">>) {
 
 /** Developer-tools role switcher. Changes the interface shown, not permissions. */
 export function switchDemoRole(role: RoleId) {
+  if (!features.devTools) return;
   setState((s) => (s.user ? { ...s, user: { ...s.user, role } } : s));
 }
 

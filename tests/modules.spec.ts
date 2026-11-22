@@ -168,7 +168,8 @@ test("role areas are gated, developer tools are hidden, and the admin console wo
   await expect(page.getByRole("heading", { name: /Good to see you/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Admin console" })).toHaveCount(0);
   // The role switcher is a developer tool and must not appear in customer builds.
-  await expect(page.getByRole("button", { name: /Dev tools/ })).toHaveCount(0);
+  // (Preview builds with NEXT_PUBLIC_DEV_TOOLS=true show it; dev-tools.spec.ts covers both modes.)
+  if (process.env.NEXT_PUBLIC_DEV_TOOLS !== "true") await expect(page.getByRole("button", { name: /Dev tools/ })).toHaveCount(0);
 
   await page.goto("/admin");
   await expect(page.getByText(/This area is for platform administrators/)).toBeVisible();

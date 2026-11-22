@@ -50,8 +50,8 @@ test("unknown email cannot sign in and protected routes redirect to login", asyn
   await page.getByLabel("Password").fill("whatever1");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByText(/couldn’t find an account with that email/)).toBeVisible();
-  // Developer persona sign-in is not exposed in customer builds.
-  await expect(page.getByText(/sample persona/i)).toHaveCount(0);
+  // Developer persona sign-in is not exposed in customer builds (covered for both modes in dev-tools.spec.ts).
+  if (process.env.NEXT_PUBLIC_DEV_TOOLS !== "true") await expect(page.getByText(/sample persona/i)).toHaveCount(0);
 });
 
 test("forgot and reset password flow is clearly simulated", async ({ page }) => {

@@ -78,7 +78,7 @@ Sign in as the **Platform administrator** persona and open `/admin`. All admin r
 - **Type:** Manrope (display and headings), IBM Plex Sans (body, navigation, buttons, forms), IBM Plex Mono (step counters only). Sizes are tokens: `text-title` (page titles: 1.5rem on phones, 1.75rem from md), `text-post` (feed titles), `text-section`, `text-body`, `text-ui`, `text-meta`, `text-micro`.
 - **Discover feed:** a composer prompt, one filter bar (search, post type, industries on request) and a single row of quick post-type chips, then posts. Each post shows who, what kind, what it is about, an optional data figure (`Post.figure`, only for numbers the post itself states) and a linked project, then Appreciate / Comment / Save / Share. Posts load eight at a time with an explicit *Load next posts*; below the xl breakpoint, people and deadline suggestions appear inside the feed instead of in a side column.
 - **Motion:** route fade (200ms), shared-layout nav, tab and radio indicators, dialogs, menus, toasts, accordions, conditional onboarding fields, and one orchestrated hero entrance on the homepage. There are no floating or scroll-triggered animations. `MotionConfig reducedMotion="user"` and a CSS reduced-motion override are in place.
-- Developer tools (sample-persona sign-in, role switcher) appear only in `next dev` or builds made with `NEXT_PUBLIC_DEV_TOOLS=true`.
+- Developer tools (sample-persona sign-in, role switcher, admin role preview) appear in `next dev`, or in builds made with `NEXT_PUBLIC_DEV_TOOLS=true`. The value is inlined at `next build`, so changing it needs a new build. Vercel **Production** builds (`VERCEL_ENV=production`) always disable them, even if the flag is set. See *Vercel deployments* below.
 - Resume and photo files are held in memory for the open tab only (`lib/store/transient-files.ts`); only metadata is persisted.
 
 ## Onboarding and preferences
@@ -92,7 +92,7 @@ Sign in as the **Platform administrator** persona and open `/admin`. All admin r
 |---|---|
 | Authentication | Local only. Passwords are validated, then discarded — never stored or checked. Sign-in matches the email stored in this browser. |
 | Email verification and password reset | Simulated with clear labels. No email is sent. |
-| Role switcher | Changes the interface only. It is **not** access control. Hide it with `NEXT_PUBLIC_DEMO_TOOLS=false`. |
+| Role switcher | Changes the interface only. It is **not** access control. Shown only when developer tools are on (see above). |
 | Role gates and admin console | Client-side UI rules, not a security boundary. |
 | AI Researcher | Template-generated plan labelled "Demonstration report". No live data. Sources are suggestions with no URLs. |
 | Validate My Idea | "Draft AI analysis" adds a demo item labelled *AI analysis*. Customer responses, expert opinions and experiment results can only be entered by the user, and must have a source. There is no success score. |
@@ -121,6 +121,25 @@ There are 28 Playwright test runs in `tests/`: everything on desktop Chrome at 1
 - mobile drawer and tab navigation
 
 Screenshots are written to `test-results/screens/`.
+
+`tests/dev-tools.spec.ts` runs against whichever build is being served. Run it in both modes, with the same flag for the build and for Playwright:
+
+```bash
+# Production-equivalent: developer tools disabled
+npm run build && npx playwright test
+# Preview-equivalent: developer tools enabled (every persona, refresh, sign-out/in)
+NEXT_PUBLIC_DEV_TOOLS=true npm run build && NEXT_PUBLIC_DEV_TOOLS=true npx playwright test
+```
+
+## Vercel deployments
+
+| Vercel environment | `NEXT_PUBLIC_DEV_TOOLS` | Developer tools |
+|---|---|---|
+| Preview | `true` (scope the variable to **Preview** only) | On |
+| Production | unset | Off. Also forced off by `VERCEL_ENV=production` |
+
+- The variable is read at build time. After adding or changing it, **redeploy** (build again). An existing deployment will not change.
+- The sample-persona picker, including **Platform administrator**, is a demo convenience. It is **not** authentication, and the admin console's role checks run in the browser. Anyone who can open a preview URL can open the admin UI. Keep previews behind **Vercel Deployment Protection** (Project → Settings → Deployment Protection → Vercel Authentication, *Standard Protection*).
 
 ## Known limitations
 
