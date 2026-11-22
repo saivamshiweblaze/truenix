@@ -1,18 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PenLine, Search } from "lucide-react";
+import Link from "next/link";
+import { Handshake, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChoiceChip, InlineSelect, SelectField, TextArea, TextField } from "@/components/ui/field";
 import { Dialog } from "@/components/ui/overlay";
-import { EmptyState, PageHeader } from "@/components/ui/primitives";
+import { Badge, EmptyState, PageHeader, SearchInput, SectionHeading, SectionLink, Toolbar, ToolbarFilters } from "@/components/ui/primitives";
 import { Tabs } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { NetworkArt } from "@/components/illustrations/art";
-import { INDUSTRIES, POST_KIND_LABEL, ROLES, SKILLS } from "@/config/taxonomy";
+import { industryLabel, INDUSTRIES, POST_KIND_LABEL, ROLES, SKILLS, stageLabel } from "@/config/taxonomy";
 import { createPost } from "@/lib/store/actions";
 import { useAppState } from "@/lib/store/store";
-import { allPeople, feedPosts } from "@/lib/store/selectors";
+import { allPeople, feedPosts, personById, publicIdeas } from "@/lib/store/selectors";
 import type { IndustryId, PostKind } from "@/lib/types";
 import { matches } from "@/lib/utils";
 import { PostCard } from "@/features/shared/post-card";
@@ -30,8 +31,12 @@ export default function CommunityPage() {
   const [q, setQ] = useState("");
   const [role, setRole] = useState("all");
   const [skill, setSkill] = useState("all");
-  const [compose, setCompose] = useState(false);
-  const [form, setForm] = useState<{ kind: PostKind; title: string; body: string; industries: IndustryId[] }>({ kind: "question", title: "", body: "", industries: [] });
+  const [compose, setCompose] = useState(() => typeof window !== "undefined" && new URLSearchParams(window.location.search).get("compose") === "1");
+  const [form, setForm] = useState<{ kind: PostKind; title: string; body: string; industries: IndustryId[] }>(() => {
+    // ?kind= preselects the post type when arriving from a shortcut (e.g. "Ask" on Discover).
+    const k = typeof window === "undefined" ? null : (new URLSearchParams(window.location.search).get("kind") as PostKind | null);
+    return { kind: k && COMMUNITY_KINDS.includes(k) ? k : "question", title: "", body: "", industries: [] };
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const posts = useMemo(() => {
@@ -45,10 +50,16 @@ export default function CommunityPage() {
   const people = useMemo(
     () =>
       allPeople(s).filter(
-        (p) => (role === "all" || p.role === role) && (skill === "all" || p.skills.includes(skill)) && matches(q, p.name, p.headline, p.organisation, p.skills.join(" ")) && s.admin.userStatus[p.id] !== "suspended",
+        (p) => (role === "all" || p.role === role) && (skill === "all" || p.skills.includes(skill)) && matches(q, p.name, p.headline, p.organisation, p.skills.join(" ")),
       ),
     [s, role, skill, q],
   );
+
+  // Projects with stated collaboration needs; ones needing the person's skills first.
+  const collabProjects = publicIdeas(s)
+    .filter((i) => i.ownerId !== "me" && i.collaborationNeeds)
+    .sort((a, b) => Number(b.requiredSkills.some((k) => s.user?.skills.includes(k))) - Number(a.requiredSkills.some((k) => s.user?.skills.includes(k))))
+    .slice(0, 4);
 
   const publish = () => {
     const e: Record<string, string> = {};
@@ -56,6 +67,10 @@ export default function CommunityPage() {
     if (form.body.trim().length < 20) e.body = "Add at least 20 characters of context.";
     setErrors(e);
     if (Object.keys(e).length) return;
+    if (!s.platform.config.features.communityPosting) {
+      toast("Posting is paused", { body: "Platform administrators have paused new community posts for now. Try again later." });
+      return;
+    }
     createPost(form);
     setCompose(false);
     setForm({ kind: "question", title: "", body: "", industries: [] });
@@ -69,8 +84,8 @@ export default function CommunityPage() {
         title="Community"
         description="Questions, discussions and collaboration requests from founders, students, experts and mentors."
         actions={
-          <Button variant="primary" onClick={() => setCompose(true)}>
-            <PenLine size={15} aria-hidden /> Start a discussion
+          <Button variant="accent" size="lg" onClick={() => setCompose(true)}>
+            <PenLine size={16} aria-hidden /> Start a discussion
           </Button>
         }
       />
@@ -88,20 +103,19 @@ export default function CommunityPage() {
           { value: "people", label: "People" },
         ]}
       />
-      <div className="mt-5 flex flex-col gap-2 md:flex-row">
-        <div className="flex h-9 flex-1 items-center gap-2 rounded-sm border border-line-strong px-3 focus-within:border-ink">
-          <Search size={15} className="text-sub" aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tab === "people" ? "Search by name, skill or organisation" : "Search discussions"} aria-label="Search community" className="h-full flex-1 bg-transparent text-ui focus:outline-none" />
-        </div>
+      <div className="grid gap-10 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0">
+      <Toolbar className="mt-5">
+        <SearchInput value={q} onChange={setQ} placeholder={tab === "people" ? "Search by name, skill or organisation" : "Search discussions"} label="Search community" />
         {tab === "people" && (
-          <div className="flex gap-2">
+          <ToolbarFilters>
             <InlineSelect aria-label="Role" value={role} onChange={(e) => setRole(e.target.value)} options={[{ value: "all", label: "All roles" }, ...ROLES.filter((r) => r.id !== "platform_admin").map((r) => ({ value: r.id, label: r.short }))]} />
             <InlineSelect aria-label="Skill" value={skill} onChange={(e) => setSkill(e.target.value)} options={[{ value: "all", label: "Any skill" }, ...SKILLS.map((k) => ({ value: k, label: k }))]} />
-          </div>
+          </ToolbarFilters>
         )}
-      </div>
+      </Toolbar>
 
-      <div className="mt-2 max-w-3xl">
+      <div className="mt-2">
         {tab === "people" ? (
           people.length ? (
             <ul>
@@ -121,6 +135,40 @@ export default function CommunityPage() {
             <EmptyState art={<NetworkArt size={52} />} title="Nothing here yet" body="Start the first discussion." action={<Button onClick={() => setCompose(true)}>Start a discussion</Button>} />
           </div>
         )}
+      </div>
+      </div>
+
+      <aside aria-labelledby="collab-title" className="flex flex-col gap-4 xl:pt-5">
+        <SectionHeading title="Projects looking for people" id="collab-title" action={<SectionLink href="/ideas">All ideas</SectionLink>} />
+        <ul className="flex flex-col gap-2">
+          {collabProjects.map((i) => {
+            const owner = personById(s, i.ownerId);
+            return (
+              <li key={i.id} className="rounded-md border border-line p-4 transition-colors hover:border-ink">
+                <p className="text-micro text-sub">
+                  {stageLabel(i.stage)} · {industryLabel(i.industry)}
+                </p>
+                <Link href={`/ideas/${i.id}`} className="mt-1 block text-ui font-semibold leading-snug hover:underline">
+                  {i.title.split(":")[0]}
+                </Link>
+                <p className="mt-1 line-clamp-2 text-meta text-sub">{i.collaborationNeeds}</p>
+                {i.requiredSkills.length > 0 && (
+                  <p className="mt-2 flex flex-wrap gap-1">
+                    {i.requiredSkills.slice(0, 3).map((k) => (
+                      <Badge key={k} tone={s.user?.skills.includes(k) ? "accent" : "outline"}>
+                        {k}
+                      </Badge>
+                    ))}
+                  </p>
+                )}
+                <p className="mt-2 flex items-center gap-1.5 text-micro text-mute">
+                  <Handshake size={13} aria-hidden /> {owner?.name}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      </aside>
       </div>
 
       <Dialog

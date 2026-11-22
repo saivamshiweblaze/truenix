@@ -6,7 +6,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const control =
-  "w-full rounded-sm border border-line-strong bg-paper px-3 text-ui text-ink placeholder:text-mute transition-colors duration-150 hover:border-sub focus:border-ink focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-ink/10 aria-[invalid=true]:border-accent-ink";
+  "w-full rounded-sm border border-line-strong bg-paper px-3 text-ui text-ink placeholder:text-mute transition-colors duration-150 hover:border-sub focus:border-ink focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-ink/10 aria-[invalid=true]:border-danger";
 
 interface FieldShellProps {
   label: string;
@@ -35,7 +35,7 @@ export function FieldShell({ label, hint, error, id, optional, children }: Field
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="text-meta text-accent-ink"
+            className="text-meta text-danger"
           >
             {error}
           </motion.p>
@@ -112,7 +112,7 @@ const selectArrow =
 /** Compact select without label chrome, for toolbars. */
 export function InlineSelect({ className, options, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { options: { value: string; label: string }[] }) {
   return (
-    <select className={cn(control, "h-9 w-auto appearance-none bg-[length:12px] bg-[right_10px_center] bg-no-repeat pr-8 text-meta", selectArrow, className)} {...props}>
+    <select className={cn(control.replace("w-full ", ""), "h-10 w-full shrink-0 appearance-none sm:w-auto bg-[length:12px] bg-[right_10px_center] bg-no-repeat pr-8 text-meta", selectArrow, className)} {...props}>
       {options.map((o) => (
         <option key={o.value} value={o.value}>
           {o.label}
@@ -133,7 +133,7 @@ export function ChoiceChip({ selected, onToggle, children, disabled }: { selecte
       onClick={onToggle}
       className={cn(
         "inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm border px-3 text-ui transition-colors duration-150 active:scale-[0.98] disabled:opacity-40",
-        selected ? "border-ink bg-ink text-white" : "border-line-strong bg-paper text-charcoal hover:border-ink",
+        selected ? "border-ink bg-paper font-medium text-ink shadow-[inset_0_0_0_1px_var(--color-ink)]" : "border-line-strong bg-paper text-charcoal hover:border-ink",
       )}
     >
       <AnimatePresence initial={false}>
@@ -164,7 +164,7 @@ export function Switch({ checked, onChange, label, description }: { checked: boo
         type="button"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={cn("relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors duration-200", checked ? "bg-ink" : "bg-line-strong")}
+        className={cn("relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors duration-200", checked ? "bg-accent" : "bg-line-strong")}
       >
         <motion.span layout transition={{ type: "spring", stiffness: 600, damping: 36 }} className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm", checked ? "right-0.5" : "left-0.5")} />
       </button>
@@ -182,12 +182,146 @@ export function RadioCard({ name, value, checked, onChange, title, description }
     >
       <input type="radio" name={name} value={value} checked={checked} onChange={() => onChange(value)} className="peer sr-only" />
       <span className={cn("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink", checked ? "border-ink" : "border-line-strong")}>
-        {checked && <motion.span layoutId={`radio-${name}`} className="h-2 w-2 rounded-full bg-accent" />}
+        {checked && <motion.span layoutId={`radio-${name}`} className="h-2 w-2 rounded-full bg-ink" />}
       </span>
       <span>
         <span className="block text-ui font-medium text-ink">{title}</span>
         <span className="mt-0.5 block text-meta text-sub">{description}</span>
       </span>
     </label>
+  );
+}
+
+/** Checkbox with a rich label (links allowed) and an attached error message. */
+export function CheckboxField({ checked, onChange, label, error, id }: { checked: boolean; onChange: (v: boolean) => void; label: ReactNode; error?: string; id?: string }) {
+  const auto = useId();
+  const fid = id ?? auto;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-start gap-2.5 text-ui text-charcoal">
+        <input
+          id={fid}
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${fid}-error` : undefined}
+          className="mt-[3px] h-4 w-4 shrink-0 accent-[var(--color-ink)]"
+        />
+        <label htmlFor={fid}>{label}</label>
+      </div>
+      {error && (
+        <p id={`${fid}-error`} role="alert" className="text-meta text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Multi-select suggestions with optional custom entries. Used wherever preferences are
+ * chosen (onboarding and Settings › Preferences) so the behaviour is identical in both places.
+ */
+export function ChipGroup({
+  legend,
+  hint,
+  error,
+  optional,
+  options,
+  value,
+  onChange,
+  allowCustom,
+  customPlaceholder = "Add your own",
+}: {
+  legend: string;
+  hint?: ReactNode;
+  error?: string;
+  optional?: boolean;
+  options: { value: string; label: string }[];
+  value: string[];
+  onChange: (v: string[]) => void;
+  allowCustom?: boolean;
+  customPlaceholder?: string;
+}) {
+  const inputId = useId();
+  const custom = value.filter((v) => !options.some((o) => o.value === v));
+  const toggle = (v: string) => onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
+  const add = (input: HTMLInputElement) => {
+    const text = input.value.trim().replace(/\s+/g, " ").slice(0, 60);
+    if (!text) return;
+    const match = options.find((o) => o.label.toLowerCase() === text.toLowerCase());
+    const v = match?.value ?? text;
+    if (!value.some((x) => x.toLowerCase() === v.toLowerCase())) onChange([...value, v]);
+    input.value = "";
+  };
+  return (
+    <FieldGroup legend={legend} hint={hint} error={error} optional={optional}>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => (
+          <ChoiceChip key={o.value} selected={value.includes(o.value)} onToggle={() => toggle(o.value)}>
+            {o.label}
+          </ChoiceChip>
+        ))}
+        {custom.map((c) => (
+          <ChoiceChip key={c} selected onToggle={() => toggle(c)}>
+            {c}
+          </ChoiceChip>
+        ))}
+      </div>
+      {allowCustom && (
+        <div className="mt-1 flex max-w-sm items-center gap-2">
+          <label htmlFor={inputId} className="sr-only">
+            Add your own {legend.toLowerCase()}
+          </label>
+          <input
+            id={inputId}
+            type="text"
+            maxLength={60}
+            placeholder={customPlaceholder}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add(e.currentTarget);
+              }
+            }}
+            className={cn(control, "h-9 text-meta")}
+          />
+          <button
+            type="button"
+            onClick={(e) => add(e.currentTarget.previousElementSibling as HTMLInputElement)}
+            className="inline-flex h-9 shrink-0 items-center rounded-sm border border-line-strong px-3 text-meta font-medium text-ink transition-colors hover:border-ink"
+            aria-label={`Add to ${legend.toLowerCase()}`}
+          >
+            Add
+          </button>
+        </div>
+      )}
+    </FieldGroup>
+  );
+}
+
+/** Group wrapper for chip/radio sets so they get a proper legend, hint and error. */
+export function FieldGroup({ legend, hint, error, optional, children, id }: { legend: string; hint?: ReactNode; error?: string; optional?: boolean; children: ReactNode; id?: string }) {
+  const auto = useId();
+  const fid = id ?? auto;
+  return (
+    <fieldset className="flex flex-col gap-2" aria-describedby={error ? `${fid}-error` : hint ? `${fid}-hint` : undefined} aria-invalid={!!error || undefined}>
+      <legend className="mb-1 text-ui font-medium text-charcoal">
+        {legend}
+        {optional && <span className="ml-1.5 font-normal text-mute">optional</span>}
+      </legend>
+      {hint && !error && (
+        <p id={`${fid}-hint`} className="-mt-1 text-meta text-mute">
+          {hint}
+        </p>
+      )}
+      {children}
+      {error && (
+        <p id={`${fid}-error`} role="alert" className="text-meta text-danger">
+          {error}
+        </p>
+      )}
+    </fieldset>
   );
 }

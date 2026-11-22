@@ -76,7 +76,7 @@ export function ResearchWorkspace() {
       const report = await researchProvider.run({ question, idea, categories, depth }, setStepIdx, abort.current.signal);
       storeResearch(report);
       setCurrent(report);
-      toast("Demonstration report ready", { body: "Added to your research history." });
+      toast("Research plan ready", { body: "Added to your research history." });
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (e) {
       if ((e as Error).name !== "AbortError") setError("The research run failed. Try again.");
@@ -97,20 +97,21 @@ export function ResearchWorkspace() {
     <>
       <PageHeader title="AI Researcher" description="Plan structured research on a market, competitors or customers, and keep every report linked to the idea it supports.">
         <p className="mt-3 inline-flex items-center gap-2 text-meta text-sub">
-          <span className="h-1.5 w-1.5 rounded-full bg-line-strong" aria-hidden /> Research provider: demonstration mode. No live AI or web search connected.
+          <span className="h-1.5 w-1.5 rounded-full bg-line-strong" aria-hidden /> Live AI and web sources aren’t connected yet — reports are structured research plans built from templates.
         </p>
       </PageHeader>
 
       <div className="grid gap-12 xl:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0">
-          <section aria-labelledby="new-research" className="flex flex-col gap-5">
+          <section aria-labelledby="new-research" className="flex flex-col gap-6 rounded-lg border border-line-strong p-5 md:p-7">
             <h2 id="new-research" className="sr-only">
               New research
             </h2>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="rq" className="text-ui font-medium text-charcoal">
+              <label htmlFor="rq" className="text-section font-bold text-ink">
                 Research question
               </label>
+              <p className="-mt-1 text-meta text-sub">One clear question gives a better plan than several broad ones.</p>
               <textarea
                 id="rq"
                 rows={3}
@@ -119,11 +120,12 @@ export function ResearchWorkspace() {
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder="What do you need to know?"
                 aria-invalid={!!error && question.trim().length < 10}
-                className="resize-none rounded-md border border-line-strong bg-paper px-4 py-3 text-[1.0625rem] leading-relaxed placeholder:text-mute focus:border-ink focus:outline-none"
+                className="mt-1 resize-none rounded-md border border-line-strong bg-paper px-4 py-3.5 font-display text-[1.25rem] font-semibold leading-snug tracking-tight placeholder:font-normal placeholder:text-mute focus:border-ink focus:outline-none md:text-[1.375rem]"
               />
-              <div className="flex flex-wrap gap-x-4 gap-y-1">
+              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span className="mr-1 text-micro text-mute">Try</span>
                 {EXAMPLES.map((ex) => (
-                  <button key={ex} type="button" onClick={() => setQuestion(ex)} className="text-left text-meta text-sub underline-offset-4 hover:text-ink hover:underline">
+                  <button key={ex} type="button" onClick={() => setQuestion(ex)} className="rounded-full border border-line px-3 py-1 text-left text-meta text-sub transition-colors hover:border-ink hover:text-ink">
                     {ex}
                   </button>
                 ))}
@@ -165,11 +167,11 @@ export function ResearchWorkspace() {
             </fieldset>
 
             {error && (
-              <p role="alert" className="text-meta text-accent-ink">
+              <p role="alert" className="text-meta text-danger">
                 {error}
               </p>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-3 border-t border-line pt-5">
               <Button variant="accent" size="lg" onClick={run} disabled={running}>
                 {running ? (
                   <>
@@ -183,6 +185,12 @@ export function ResearchWorkspace() {
                 <Button variant="ghost" size="lg" onClick={cancel}>
                   Cancel
                 </Button>
+              )}
+              {!running && (
+                <span className="text-meta text-sub">
+                  {depth === "scan" ? "Quick scan" : depth === "deep" ? "Deep dive" : "Standard depth"} · {categories.length || "No"} focus area{categories.length === 1 ? "" : "s"}
+                  {ideaId ? " · linked to an idea" : ""}
+                </span>
               )}
             </div>
           </section>
@@ -220,7 +228,7 @@ export function ResearchWorkspace() {
           </div>
         </div>
 
-        <aside aria-labelledby="history">
+        <aside aria-labelledby="history" className="xl:pt-1">
           <SectionHeading title="Research history" id="history" />
           <Tabs
             label="History filter"
@@ -239,7 +247,7 @@ export function ResearchWorkspace() {
                     {r.question}
                   </Link>
                   <p className="mt-0.5 text-micro text-mute">
-                    {timeAgo(r.createdAt)} · Demo report{r.saved ? " · Saved" : ""}
+                    {timeAgo(r.createdAt)} · {r.provenance === "demo" ? "Research plan" : "Report"}{r.saved ? " · Saved" : ""}
                   </p>
                 </li>
               ))}

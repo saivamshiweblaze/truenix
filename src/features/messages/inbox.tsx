@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, DemoMark, EmptyState, PageHeader } from "@/components/ui/primitives";
+import { Avatar, SampleMark, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { Segmented } from "@/components/ui/tabs";
 import { sendMessage } from "@/lib/store/actions";
 import { useAppState } from "@/lib/store/store";
@@ -98,7 +98,7 @@ export function Inbox() {
                   </Link>
                   <p className="truncate text-meta text-sub">{active.subject}</p>
                 </div>
-                {other?.demo && <DemoMark>Demo contact</DemoMark>}
+                {other?.demo && <SampleMark title="Sample contact. Messages are saved in your inbox but aren’t delivered.">Sample contact</SampleMark>}
               </header>
               <div className="flex-1 overflow-y-auto px-4 py-5">
                 <ul className="flex flex-col gap-3">

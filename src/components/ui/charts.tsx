@@ -74,8 +74,16 @@ export function ColumnChart({ caption, labels, values, unit }: { caption: string
           ))}
         </div>
         <div className="mt-1.5 flex gap-[2px]">
-          {labels.map((l) => (
-            <span key={l} className="flex-1 text-center text-micro text-mute">
+          {labels.map((l, i) => (
+            <span
+              key={l}
+              className={cn(
+                "flex-1 text-center text-micro text-mute",
+                // Many columns on a phone: label every other one (always the latest) on one line, so they don't wrap and crowd.
+                labels.length > 6 && "max-sm:whitespace-nowrap",
+                labels.length > 6 && (labels.length - 1 - i) % 2 === 1 && "max-sm:invisible",
+              )}
+            >
               {l}
             </span>
           ))}

@@ -47,7 +47,7 @@ export function Tabs<T extends string>({
           >
             {it.label}
             {it.count !== undefined && <span className="ml-1.5 text-meta text-mute tabular-nums">{it.count}</span>}
-            {active && <motion.span layoutId={`tab-${group}`} className="absolute inset-x-0 -bottom-px h-[2px] bg-ink" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
+            {active && <motion.span layoutId={`tab-${group}`} className="absolute inset-x-0 -bottom-px h-[2px] bg-accent" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
           </button>
         );
       })}

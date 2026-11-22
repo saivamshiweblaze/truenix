@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { InlineSelect } from "@/components/ui/field";
-import { EmptyState, PageHeader } from "@/components/ui/primitives";
+import { EmptyState, PageHeader, SearchInput, Toolbar, ToolbarFilters } from "@/components/ui/primitives";
+import { ProjectCard } from "@/features/ideas/project-card";
 import { Tabs } from "@/components/ui/tabs";
 import { BulbArt } from "@/components/illustrations/art";
 import { INDUSTRIES, STAGES } from "@/config/taxonomy";
@@ -40,10 +41,16 @@ export default function IdeasPage() {
     <>
       <PageHeader
         title="Ideas"
-        description="Startup ideas people have chosen to share. Open one to see the problem, the team, and what they need."
+        description="Startup ideas and projects people have chosen to share — the problem, the team and what they need."
+        meta={
+          <>
+            <span>{publicIdeas(s).length} shared projects</span>
+            <span>{s.ideas.length} of yours</span>
+          </>
+        }
         actions={
-          <ButtonLink href="/ideas/new" variant="accent">
-            <Plus size={16} aria-hidden /> Submit an idea
+          <ButtonLink href="/ideas/new" variant="accent" size="lg" className="max-lg:hidden">
+            <Plus size={17} strokeWidth={2.4} aria-hidden /> Submit an idea
           </ButtonLink>
         }
       />
@@ -58,23 +65,26 @@ export default function IdeasPage() {
           { value: "following", label: "Following", count: s.following.ideas.length },
         ]}
       />
-      <div className="mt-5 flex flex-col gap-2 lg:flex-row lg:items-center">
-        <div className="flex h-9 flex-1 items-center gap-2 rounded-sm border border-line-strong px-3 focus-within:border-ink">
-          <Search size={15} className="text-sub" aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by problem, users or title" aria-label="Search ideas" className="h-full flex-1 bg-transparent text-ui focus:outline-none" />
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <Toolbar className="mt-5">
+        <SearchInput value={q} onChange={setQ} placeholder="Search by problem, users or title" label="Search ideas" />
+        <ToolbarFilters>
           <InlineSelect aria-label="Industry" value={industry} onChange={(e) => setIndustry(e.target.value)} options={[{ value: "all", label: "All industries" }, ...INDUSTRIES.map((i) => ({ value: i.id, label: i.label }))]} />
           <InlineSelect aria-label="Stage" value={stage} onChange={(e) => setStage(e.target.value)} options={[{ value: "all", label: "All stages" }, ...STAGES.map((st) => ({ value: st.id, label: st.label }))]} />
           <InlineSelect aria-label="Geography" value={geo} onChange={(e) => setGeo(e.target.value)} options={[{ value: "all", label: "All regions" }, ...geographies.map((g) => ({ value: g, label: g }))]} />
           <InlineSelect aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as "recent" | "followed")} options={[{ value: "recent", label: "Recently updated" }, { value: "followed", label: "Most followed" }]} />
-        </div>
-      </div>
+        </ToolbarFilters>
+      </Toolbar>
 
       <p className="mt-5 text-meta text-sub" aria-live="polite">
         {list.length} {list.length === 1 ? "idea" : "ideas"}
       </p>
-      {list.length ? (
+      {list.length && view === "mine" ? (
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {list.map((i) => (
+            <ProjectCard key={i.id} idea={i} />
+          ))}
+        </div>
+      ) : list.length ? (
         <ul className="mt-1">
           {list.map((i) => (
             <IdeaRow key={i.id} idea={i} />

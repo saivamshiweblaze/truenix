@@ -1,54 +1,45 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { TextLink } from "@/components/ui/primitives";
-import { toast } from "@/components/ui/toast";
-import { markEmailVerified } from "@/lib/store/actions";
 import { useAppSnapshot } from "@/lib/store/store";
-import { DemoAuthNotice } from "@/features/auth/demo-notice";
+import { ServiceNotice } from "@/features/auth/service-notice";
 
+/**
+ * Email confirmation status. No email provider is connected, so this page never claims
+ * a message was sent and never marks an address as verified.
+ * Phase 2 integration point: send the confirmation link here and handle its callback.
+ */
 export default function VerifyEmailPage() {
-  const router = useRouter();
   const { state, hydrated } = useAppSnapshot();
-  const email = state.user?.email;
+  const user = state.user;
 
-  if (hydrated && !state.user) {
+  if (hydrated && !user) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-title font-semibold">No account to verify</h1>
+        <h1 className="text-title font-bold">No account to confirm</h1>
         <p className="text-body text-sub">Create an account first, then come back to this step.</p>
         <TextLink href="/register">Create an account</TextLink>
       </div>
     );
   }
 
+  const next = user?.onboarded ? "/home" : "/onboarding";
   return (
     <div className="flex flex-col gap-6">
       <MailCheck size={28} strokeWidth={1.5} aria-hidden />
       <div>
-        <h1 className="text-title font-semibold">Verify your email</h1>
+        <h1 className="text-title font-bold">Email confirmation</h1>
         <p className="mt-2 text-body text-sub">
-          In the live product we would send a verification link to <span className="font-medium text-ink">{email ?? "your address"}</span>. This
-          demonstration cannot send email, so you can mark the address as verified here.
+          <span className="font-medium text-ink">{user?.email ?? "Your address"}</span> is saved as{" "}
+          <span className="font-medium text-ink">{user?.emailVerified ? "confirmed" : "not yet confirmed"}</span>.
         </p>
       </div>
-      <Button
-        variant="primary"
-        size="lg"
-        onClick={() => {
-          markEmailVerified();
-          toast("Email marked as verified", { body: "Simulated step — no email was sent." });
-          router.push("/onboarding");
-        }}
-      >
-        Simulate verification and continue
-      </Button>
-      <button type="button" onClick={() => router.push("/onboarding")} className="self-start text-ui text-sub underline-offset-4 hover:text-ink hover:underline">
-        Skip for now
-      </button>
-      <DemoAuthNotice>Verification is simulated. A real email provider will be connected in a later phase.</DemoAuthNotice>
+      <ServiceNotice>Email delivery isn’t connected yet, so no confirmation message has been sent. You’ll be asked to confirm your address once it is.</ServiceNotice>
+      <ButtonLink href={next} size="lg">
+        {user?.onboarded ? "Back to home" : "Continue to profile setup"}
+      </ButtonLink>
     </div>
   );
 }

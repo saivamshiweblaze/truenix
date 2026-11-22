@@ -5,7 +5,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { TextField } from "@/components/ui/field";
 import { completePasswordReset } from "@/lib/store/actions";
 import { fieldErrors, resetSchema } from "@/lib/validation";
-import { DemoAuthNotice } from "@/features/auth/demo-notice";
+import { ServiceNotice } from "@/features/auth/service-notice";
 
 export default function ResetPasswordPage() {
   const [form, setForm] = useState({ password: "", confirm: "" });
@@ -25,8 +25,8 @@ export default function ResetPasswordPage() {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-title font-semibold">Password updated</h1>
-          <p className="mt-2 text-body text-sub">In the demonstration, sign-in only checks your email, so you can sign in straight away.</p>
+          <h1 className="text-title font-bold">Password updated</h1>
+          <p className="mt-2 text-body text-sub">Sign-in currently matches your email on this device, so you can sign in straight away.</p>
         </div>
         <ButtonLink href="/login" size="lg">
           Sign in
@@ -38,7 +38,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-title font-semibold">Choose a new password</h1>
+        <h1 className="text-title font-bold">Choose a new password</h1>
         <p className="mt-2 text-body text-sub">Use at least 8 characters with a letter and a number.</p>
       </div>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
           Update password
         </Button>
       </form>
-      <DemoAuthNotice>Reset is simulated. The new password is validated and then discarded; nothing is stored.</DemoAuthNotice>
+      <ServiceNotice>Passwords aren’t stored until secure accounts are connected. The new password is checked for strength, then discarded.</ServiceNotice>
     </div>
   );
 }

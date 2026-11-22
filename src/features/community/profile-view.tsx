@@ -2,23 +2,38 @@
 
 import type { ReactNode } from "react";
 import type { Idea, Person, Post } from "@/lib/types";
-import { Avatar, DemoMark, SectionHeading, TagList } from "@/components/ui/primitives";
+import { Avatar, Badge, SampleMark, SectionHeading, TagList } from "@/components/ui/primitives";
 import { industryLabel, roleLabel } from "@/config/taxonomy";
 import { IdeaRow } from "@/features/shared/rows";
 import { PostCard } from "@/features/shared/post-card";
 
-export function ProfileView({ person, ideas, posts, actions, me }: { person: Person; ideas: Idea[]; posts: Post[]; actions?: ReactNode; me?: boolean }) {
+export function ProfileView({ person, ideas, posts, actions, me, details, photo }: { person: Person; ideas: Idea[]; posts: Post[]; actions?: ReactNode; me?: boolean; details?: ReactNode; photo?: string }) {
   return (
     <>
       <header className="flex flex-col gap-6 border-b border-line pb-8 sm:flex-row sm:items-start">
-        <Avatar name={person.name} size={88} me={me} />
+        <Avatar name={person.name} size={88} me={me} src={photo} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-title font-semibold">{person.name}</h1>
-            {person.demo && <DemoMark>Demo profile</DemoMark>}
+            <h1 className="text-title font-bold">{person.name}</h1>
+            {person.demo && <SampleMark title="Illustrative profile. This person and their organisations are fictional.">Sample profile</SampleMark>}
           </div>
           <p className="mt-1.5 max-w-2xl text-body text-charcoal">{person.headline}</p>
           <p className="mt-1 text-meta text-sub">{[person.organisation, person.location, roleLabel(person.role)].filter(Boolean).join(" · ")}</p>
+          {person.skills.length > 0 && (
+            <ul aria-label="Skills" className="mt-4 flex flex-wrap gap-1.5">
+              {person.skills.slice(0, 8).map((k) => (
+                <li key={k}>
+                  <Badge>{k}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
+          {person.collaboration.length > 0 && (
+            <p className="mt-3 flex flex-wrap items-center gap-2 text-meta text-charcoal">
+              <Badge tone="outline">Open to collaborate</Badge>
+              {person.collaboration.slice(0, 3).join(" · ")}
+            </p>
+          )}
           {actions && <div className="mt-5 flex flex-wrap gap-2">{actions}</div>}
         </div>
       </header>
@@ -49,13 +64,8 @@ export function ProfileView({ person, ideas, posts, actions, me }: { person: Per
           </section>
         </div>
         <aside className="flex flex-col gap-8">
-          {person.skills.length > 0 && (
-            <section>
-              <SectionHeading title="Skills" />
-              <TagList items={person.skills} />
-            </section>
-          )}
-          {person.interests.length > 0 && (
+          {details}
+          {!me && person.interests.length > 0 && (
             <section>
               <SectionHeading title="Interests" />
               <TagList items={person.interests.map(industryLabel)} />
@@ -76,7 +86,7 @@ export function ProfileView({ person, ideas, posts, actions, me }: { person: Per
               </ul>
             </section>
           )}
-          {person.collaboration.length > 0 && (
+          {!me && person.collaboration.length > 3 && (
             <section>
               <SectionHeading title="Open to" />
               <ul className="flex flex-col gap-1.5 text-ui text-charcoal">

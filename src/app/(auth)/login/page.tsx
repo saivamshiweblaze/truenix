@@ -10,7 +10,8 @@ import { toast } from "@/components/ui/toast";
 import { ROLES } from "@/config/taxonomy";
 import { signIn, signInAsPersona } from "@/lib/store/actions";
 import { fieldErrors, loginSchema, safeNext } from "@/lib/validation";
-import { DemoAuthNotice } from "@/features/auth/demo-notice";
+import { ServiceNotice } from "@/features/auth/service-notice";
+import { features } from "@/config/brand";
 import type { RoleId } from "@/lib/types";
 
 export default function LoginPage() {
@@ -35,16 +36,16 @@ export default function LoginPage() {
 
   const usePersona = () => {
     signInAsPersona(persona);
-    toast("Signed in with a demo persona", { body: ROLES.find((r) => r.id === persona)?.label });
+    toast("Signed in with a sample persona", { body: ROLES.find((r) => r.id === persona)?.label });
     router.push(persona === "platform_admin" ? "/admin" : persona === "institution_admin" ? "/institution" : "/home");
   };
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-title font-semibold">Sign in</h1>
+        <h1 className="text-title font-bold">Sign in</h1>
         <p className="mt-2 text-body text-sub">
-          New here? <TextLink href="/register" className="text-ink underline">Create a demo account</TextLink>
+          New here? <TextLink href="/register" className="text-ink underline">Create an account</TextLink>
         </p>
       </div>
 
@@ -57,22 +58,24 @@ export default function LoginPage() {
           </Link>
         </div>
         {errors.form && (
-          <p role="alert" className="text-meta text-accent-ink">
+          <p role="alert" className="text-meta text-danger">
             {errors.form}
           </p>
         )}
-        <Button type="submit" variant="primary" size="lg">
+        <Button type="submit" variant="accent" size="lg">
           Sign in
         </Button>
       </form>
 
+      {features.devTools && (
+        <>
       <div className="flex items-center gap-3 text-meta text-mute">
-        <span className="h-px flex-1 bg-line" /> or explore instantly <span className="h-px flex-1 bg-line" />
+        <span className="h-px flex-1 bg-line" /> developer tools <span className="h-px flex-1 bg-line" />
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 rounded-md border border-dashed border-line-strong p-3.5">
         <label htmlFor="persona" className="text-ui font-medium text-charcoal">
-          Continue as a demo persona
+          Sign in as a sample persona
         </label>
         <div className="flex gap-2">
           <select
@@ -93,7 +96,10 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <DemoAuthNotice />
+        </>
+      )}
+
+      <ServiceNotice>Sign-in is local to this browser while secure accounts are being connected: your email is matched on this device, and passwords aren’t stored or checked yet.</ServiceNotice>
     </div>
   );
 }

@@ -6,6 +6,7 @@ export const SEED_POSTS: Post[] = [
     title: "Two confirmed leaks in the first pilot week",
     body: "Our model flagged five pipe segments. Field crews confirmed leaks in two. The false alarm came from a valve schedule nobody had told us about, which is now an input feature. The lesson: talk to the night-shift operators before you train anything.",
     industries: ["water", "ai"], createdAt: "2026-11-11T09:10:00Z", likes: 86, demo: true,
+    figure: { kind: "stat", value: "2 of 5", label: "flagged pipe segments confirmed as leaks by field crews" },
   },
   {
     id: "f-2", kind: "problem", authorId: "p-wanjiru",
@@ -42,12 +43,14 @@ export const SEED_POSTS: Post[] = [
     title: "What 41 teachers told us about checking comprehension",
     body: "Teachers did not want another app. They wanted to know, before the bell, which five children to sit with tomorrow. That single sentence reshaped ClassPulse from a dashboard into a short list.",
     industries: ["education"], createdAt: "2026-11-07T08:15:00Z", likes: 178, demo: true,
+    figure: { kind: "stat", value: "41", label: "teachers interviewed about checking comprehension" },
   },
   {
     id: "f-8", kind: "idea", authorId: "p-elena", ideaId: "i-mycoform",
     title: "Can mycelium packaging be dried fast enough to compete?",
     body: "Growing mycelium into a shape takes about five days. Drying it is the bottleneck. We have cut drying from 30 hours to 9 with a staged-temperature process. Next question: is that fast enough for a buyer shipping 20,000 units a month?",
     industries: ["sustainability", "biotech", "manufacturing"], createdAt: "2026-11-06T14:20:00Z", likes: 73, demo: true,
+    figure: { kind: "bars", caption: "Drying time per batch", unit: "h", items: [{ label: "Before", value: 30 }, { label: "Staged temperature", value: 9, highlight: true }] },
   },
   {
     id: "f-9", kind: "question", authorId: "p-rohan",
@@ -103,7 +106,7 @@ export const SEED_NOTIFICATIONS: Notification[] = [
   { id: "n-2", kind: "opportunity", title: "A deadline is approaching", body: "Coastal Health Innovation Challenge closes on 15 December.", href: "/opportunities/o-health-challenge", createdAt: "2026-11-10T08:00:00Z", demo: true },
   { id: "n-3", kind: "follow", title: "Amara Okafor started following you", body: "Mentor · two exits in B2B payments", href: "/people/p-amara", createdAt: "2026-11-09T14:00:00Z", demo: true },
   { id: "n-4", kind: "collaboration", title: "New collaboration request", body: "Rohan Mehta wants to contribute frontend work.", href: "/messages?thread=t-rohan", createdAt: "2026-11-08T19:00:00Z", demo: true },
-  { id: "n-5", kind: "system", title: "Welcome to the demonstration workspace", body: "All seeded content is fictional and marked as demo.", href: "/workspace", createdAt: "2026-11-01T00:00:00Z", demo: true },
+  { id: "n-5", kind: "system", title: "Welcome to TRUEVIX", body: "Some of the people, ideas and programmes you’ll see are illustrative samples while the community grows.", href: "/workspace", createdAt: "2026-11-01T00:00:00Z", demo: true },
 ];
 
 export const SEED_THREADS: Thread[] = [

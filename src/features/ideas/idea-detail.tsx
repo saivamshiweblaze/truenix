@@ -7,7 +7,7 @@ import { FlaskConical, Pencil, ScanSearch, Trash2 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { TextArea, TextField } from "@/components/ui/field";
 import { Dialog } from "@/components/ui/overlay";
-import { Avatar, DemoMark, EmptyState, SectionHeading, StatusDot, TagList } from "@/components/ui/primitives";
+import { Avatar, EmptyState, SectionHeading, StatusDot, TagList } from "@/components/ui/primitives";
 import { Tabs } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { JourneyLine } from "@/components/illustrations/journey-line";
@@ -58,15 +58,28 @@ export function IdeaDetail() {
 
       <header className="border-b border-line pb-8">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <StatusDot tone="accent" label={stageLabel(idea.stage)} />
+          <StatusDot tone="ink" label={stageLabel(idea.stage)} />
           <span className="text-meta text-sub">{industryLabel(idea.industry)}</span>
           <span className="text-meta text-sub">{idea.geography}</span>
           {mine && <span className="text-meta text-sub">{VISIBILITY.find((v) => v.id === idea.visibility)?.label}</span>}
           {idea.status === "draft" && <span className="text-meta font-medium text-ink">Draft — not submitted</span>}
-          {idea.demo && <DemoMark />}
         </div>
-        <h1 className="mt-3 max-w-4xl text-title font-semibold">{idea.title}</h1>
+        <h1 className="mt-3 max-w-4xl text-title font-bold">{idea.title}</h1>
         <p className="mt-3 max-w-3xl text-body text-sub">{idea.summary}</p>
+        {mine && idea.review && idea.review.status !== "approved" && (
+          <p role="status" className="mt-4 max-w-3xl rounded-sm bg-surface px-3 py-2 text-meta text-charcoal">
+            {idea.review.status === "pending"
+              ? "Waiting for platform review. Until it is approved, other members can’t see this idea in Ideas or Discover."
+              : idea.review.status === "changes_requested"
+                ? `The platform team asked for changes before listing this idea${idea.review.note ? `: ${idea.review.note}` : "."}`
+                : `This idea wasn’t approved for listing${idea.review.note ? `: ${idea.review.note}` : "."} It stays visible to you and your team.`}
+          </p>
+        )}
+        {mine && (idea.publication === "unpublished" || idea.publication === "archived") && (
+          <p role="status" className="mt-2 max-w-3xl rounded-sm bg-surface px-3 py-2 text-meta text-charcoal">
+            The platform team has {idea.publication} this idea, so other members can’t see it. Contact support if you think this is a mistake.
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap items-center gap-2">
           {mine ? (
             <>

@@ -211,7 +211,7 @@ export function MenuItem({ onSelect, children, active, icon }: { onSelect: () =>
     >
       {icon && <span className="text-sub">{icon}</span>}
       <span className="flex-1">{children}</span>
-      {active && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-accent" />}
+      {active && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-ink" />}
     </button>
   );
 }

@@ -30,6 +30,12 @@ export const NEXT_STEPS: Record<RoleId, Step[]> = {
     { title: "Find talent or a co-founder", body: "Filter people by skill and availability.", href: "/community?tab=people" },
     { title: "Accelerators and pilots", body: "Programmes that fit your stage.", href: "/opportunities" },
   ],
+  professional: [
+    { title: "Read problems in your industry", body: "See what founders and students are noticing in your field.", href: "/discover" },
+    { title: "Find a venture to join", body: "Projects looking for people with your experience.", href: "/community?tab=collaboration" },
+    { title: "Answer industry questions", body: "Your first-hand view saves founders months.", href: "/community?tab=questions" },
+    { title: "Industry programmes", body: "Pilots and challenges run by companies.", href: "/opportunities" },
+  ],
   expert: [
     { title: "Answer review requests", body: "Founders asked for your view.", href: "/reviews" },
     { title: "Complete your expertise profile", body: "Founders search by industry and skill.", href: "/profile" },

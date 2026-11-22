@@ -11,13 +11,15 @@ import { ideaById } from "@/lib/store/selectors";
 import type { ResearchReport } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
+import { brand } from "@/config/brand";
 
-export function DemoReportBanner() {
+/** Shown on reports built without a live model or web search — the moment the limitation matters. */
+export function ReportProvenanceNote() {
   return (
-    <div className="flex gap-3 border-l-2 border-accent bg-accent-wash/50 px-4 py-3 text-meta text-charcoal">
-      <Info size={15} className="mt-0.5 shrink-0 text-accent-ink" aria-hidden />
+    <div className="flex gap-3 rounded-sm border border-line bg-surface px-4 py-3 text-meta text-charcoal">
+      <Info size={15} className="mt-0.5 shrink-0 text-sub" aria-hidden />
       <p>
-        <span className="font-medium text-ink">Demonstration report.</span> Generated locally from templates. No AI model or live web search is connected, so it contains no real market data. Use it as a research plan, not as findings.
+        <span className="font-medium text-ink">Research plan, not findings.</span> Built from {brand.productName} research templates. Live AI and web sources aren’t connected yet, so this report contains no real market data — use it to plan what to verify.
       </p>
     </div>
   );
@@ -58,7 +60,7 @@ export function ReportView({ report }: { report: ResearchReport }) {
             </Link>
           </p>
         )}
-        {report.provenance === "demo" && <DemoReportBanner />}
+        {report.provenance === "demo" && <ReportProvenanceNote />}
         <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"

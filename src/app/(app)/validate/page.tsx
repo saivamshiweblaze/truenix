@@ -55,7 +55,7 @@ export default function ValidateIndexPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-ui font-medium text-ink">{i.title || "Untitled"}</p>
                         <div className="mt-1 flex flex-wrap gap-3">
-                          <StatusDot tone={sum && sum.realEvidence > 0 ? "accent" : "mute"} label={sum ? `${sum.done} of ${sum.total} areas complete` : "Not started"} />
+                          <StatusDot tone={sum && sum.realEvidence > 0 ? "positive" : "mute"} label={sum ? `${sum.done} of ${sum.total} areas complete` : "Not started"} />
                           <span className="text-meta text-mute">{stageLabel(i.stage)}{i.status === "draft" ? " · Draft" : ""}</span>
                         </div>
                       </div>
@@ -70,7 +70,7 @@ export default function ValidateIndexPage() {
           ) : (
             <div className="flex items-start gap-5 border border-dashed border-line-strong p-6">
               <FlaskArt size={56} />
-              <p className="text-ui text-sub">You have no ideas yet. Start one on the right, or submit a full idea from the Ideas section.</p>
+              <p className="text-ui text-sub">You have no ideas yet. Start a private draft with the form here, or submit a full idea from the Ideas section.</p>
             </div>
           )}
         </section>

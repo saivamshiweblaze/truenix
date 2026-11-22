@@ -18,10 +18,10 @@ export function RoleGate({ roles, children }: { roles: RoleId[]; children: React
   return (
     <div className="mx-auto flex max-w-lg flex-col items-start gap-4 py-16">
       <ShieldAlert size={28} strokeWidth={1.5} aria-hidden />
-      <h1 className="text-title font-semibold">This area is for {roles.map(roleLabel).join(" or ").toLowerCase()}s</h1>
+      <h1 className="text-title font-bold">This area is for {roles.map(roleLabel).join(" or ").toLowerCase()}s</h1>
       <p className="text-body text-sub">
         Your current role is {role ? roleLabel(role).toLowerCase() : "unknown"}.
-        {features.demoTools ? " In this demonstration you can preview it by switching the demo role in the sidebar or the More menu." : ""}
+        {features.devTools ? " With developer tools enabled, you can preview it by switching role in the sidebar or the More menu." : ""}
       </p>
       <ButtonLink href="/home" variant="secondary">
         Back to home

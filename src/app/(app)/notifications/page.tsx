@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Bell, MessageSquare, Sparkles, UserPlus, Users, ScanSearch, ClipboardCheck, Info, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DemoMark, EmptyState, PageHeader } from "@/components/ui/primitives";
+import { EmptyState, PageHeader } from "@/components/ui/primitives";
 import { Tabs } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { markAllNotificationsRead, markNotificationRead } from "@/lib/store/actions";
@@ -73,7 +73,6 @@ export default function NotificationsPage() {
                     <span className="block truncate text-meta text-sub">{n.body}</span>
                     <span className="mt-1 flex items-center gap-2 text-micro text-mute">
                       {timeAgo(n.createdAt)}
-                      {n.demo && <DemoMark />}
                     </span>
                   </span>
                   {!n.read && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />}

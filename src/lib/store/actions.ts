@@ -26,17 +26,7 @@ function withActivity(s: AppState, text: string, href?: string): AppState {
   return { ...s, activity: [{ id: uid("a"), text, href, createdAt: now() }, ...s.activity].slice(0, 60) };
 }
 
-function audit(s: AppState, action: string, target: string): AppState {
-  return {
-    ...s,
-    admin: {
-      ...s.admin,
-      audit: [{ id: uid("au"), actor: s.user?.name ?? "Unknown", action, target, createdAt: now() }, ...s.admin.audit].slice(0, 200),
-    },
-  };
-}
-
-/* ---------------- Account & demo auth ---------------- */
+/* ---------------- Account & browser-local auth ---------------- */
 
 export function createAccount(input: { name: string; email: string }) {
   const user: CurrentUser = {
@@ -57,14 +47,14 @@ export function createAccount(input: { name: string; email: string }) {
     onboarded: false,
     joinedAt: now(),
   };
-  setState((s) => withActivity({ ...s, user, signedIn: true }, "Created a demonstration account"));
+  setState((s) => withActivity({ ...s, user, signedIn: true }, "Created your account"));
 }
 
-/** Demo sign-in: matches the email of the account stored in this browser. No password is stored or checked. */
+/** Browser-local sign-in: matches the email of the account stored in this browser. No password is stored or checked. */
 export function signIn(email: string): { ok: true } | { ok: false; reason: string } {
   const s = getState();
   if (!s.user || s.user.email !== email.trim().toLowerCase()) {
-    return { ok: false, reason: "No demonstration account with that email exists in this browser. Create one, or continue with a demo persona." };
+    return { ok: false, reason: "We couldn’t find an account with that email on this device. Accounts are saved per browser for now, so create one here to continue." };
   }
   setState((st) => ({ ...st, signedIn: true }));
   return { ok: true };
@@ -74,11 +64,12 @@ const PERSONA_NAMES: Record<RoleId, { name: string; headline: string; org: strin
   student_idea: { name: "Meera Krishnan", headline: "Electronics student working on a crop-storage sensor", org: "Northfield Institute of Technology", interests: ["agriculture", "ai", "logistics"] },
   student_explorer: { name: "Arjun Nair", headline: "First-year student exploring climate and health", org: "Northfield Institute of Technology", interests: ["sustainability", "healthcare", "energy"] },
   founder: { name: "Lena Brandt", headline: "Founder exploring energy software for small factories", org: "Independent", interests: ["energy", "manufacturing", "ai"] },
+  professional: { name: "Nadia Rahman", headline: "Operations manager · food processing", org: "Independent", interests: ["manufacturing", "logistics"] },
   expert: { name: "Dr. Samuel Osei", headline: "Supply-chain analyst · cold-chain logistics", org: "Independent consultant", interests: ["logistics", "agriculture"] },
   mentor: { name: "Grace Liu", headline: "Product mentor · ten years in consumer apps", org: "Independent", interests: ["consumer", "education"] },
-  participant: { name: "Ravi Shankar", headline: "Small-farm owner and research participant", org: "Farmer producer organisation (demo)", interests: ["agriculture", "water"] },
+  participant: { name: "Ravi Shankar", headline: "Small-farm owner and research participant", org: "Farmer producer organisation (sample)", interests: ["agriculture", "water"] },
   institution_admin: { name: "Kofi Asante", headline: "Innovation cell coordinator", org: "Northfield Institute of Technology", interests: ["education", "ai"] },
-  platform_admin: { name: "Platform Operator", headline: "Trust and safety, platform operations", org: "Platform team (demo)", interests: ["ai"] },
+  platform_admin: { name: "Platform Operator", headline: "Trust and safety, platform operations", org: "Platform team", interests: ["ai"] },
 };
 
 export function signInAsPersona(role: RoleId) {
@@ -86,7 +77,7 @@ export function signInAsPersona(role: RoleId) {
   const user: CurrentUser = {
     id: "me",
     name: p.name,
-    email: `${role}@demo.local`,
+    email: `${role}@sample.local`,
     role,
     headline: p.headline,
     organisation: p.org,
@@ -101,7 +92,7 @@ export function signInAsPersona(role: RoleId) {
     onboarded: true,
     joinedAt: now(),
   };
-  setState((s) => withActivity({ ...s, user, signedIn: true }, `Signed in as demo persona: ${p.name}`));
+  setState((s) => withActivity({ ...s, user, signedIn: true }, `Signed in as sample persona: ${p.name}`));
 }
 
 export function signOut() {
@@ -116,10 +107,6 @@ export function completePasswordReset() {
   setState((s) => ({ ...s, pendingResetEmail: null }));
 }
 
-export function markEmailVerified() {
-  setState((s) => (s.user ? { ...s, user: { ...s.user, emailVerified: true } } : s));
-}
-
 export function updateUser(patch: Partial<Omit<CurrentUser, "id">>) {
   setState((s) => (s.user ? { ...s, user: { ...s.user, ...patch } } : s));
 }
@@ -130,7 +117,7 @@ export function completeOnboarding(patch: Partial<Omit<CurrentUser, "id">>) {
   );
 }
 
-/** Development-only role switcher. Changes the demo interface, not permissions. */
+/** Developer-tools role switcher. Changes the interface shown, not permissions. */
 export function switchDemoRole(role: RoleId) {
   setState((s) => (s.user ? { ...s, user: { ...s.user, role } } : s));
 }
@@ -166,6 +153,14 @@ export function saveIdea(draft: IdeaDraft, opts: { id?: string; submit: boolean 
       createdAt: existing?.createdAt ?? now(),
       updatedAt: now(),
       status: opts.submit ? "submitted" : existing?.status === "submitted" ? "submitted" : "draft",
+      // Newly submitted public ideas wait for platform review when the setting is on.
+      review:
+        opts.submit && existing?.status !== "submitted" && draft.visibility === "public_summary" && s.admin.settings.requireIdeaReview
+          ? { status: "pending" as const }
+          : existing?.review,
+      publication: existing?.publication,
+      featured: existing?.featured,
+      history: existing?.history,
       demo: false,
       followers: existing?.followers ?? 0,
     };
@@ -212,6 +207,13 @@ export function expressInterest(ideaId: string, ownerId: string, ideaTitle: stri
       {
         ...s,
         threads: [{ id: threadId, participantId: ownerId, subject: `Collaboration interest: ${ideaTitle}`, kind: "collaboration_request", demo: false }, ...s.threads],
+        platform: {
+          ...s.platform,
+          collaborations: [
+            { id: uid("col"), kind: "request" as const, fromId: "me", toId: ownerId, ideaId, role: "Contributor", message: clip(note, 600), status: "pending" as const, createdAt: now(), demo: false },
+            ...s.platform.collaborations,
+          ],
+        },
         messages: [...s.messages, { id: uid("m"), threadId, authorId: "me", body: clip(note, 1000), createdAt: now() }],
       },
       `Expressed collaboration interest in ${ideaTitle}`,
@@ -398,25 +400,4 @@ export function updateNotificationPrefs(patch: Partial<NotificationPrefs>) {
 }
 export function updatePrivacy(patch: Partial<PrivacyPrefs>) {
   setState((s) => ({ ...s, privacy: { ...s.privacy, ...patch } }));
-}
-
-/* ---------------- Admin console (demo, local only) ---------------- */
-
-export function adminSetUserStatus(personId: string, name: string, status: "active" | "suspended") {
-  setState((s) => audit({ ...s, admin: { ...s.admin, userStatus: { ...s.admin.userStatus, [personId]: status } } }, status === "suspended" ? "Suspended user" : "Reactivated user", name));
-}
-export function adminSetRole(personId: string, name: string, role: RoleId) {
-  setState((s) => audit({ ...s, admin: { ...s.admin, roleOverrides: { ...s.admin.roleOverrides, [personId]: role } } }, `Changed role to ${role}`, name));
-}
-export function adminModerate(itemId: string, label: string, decision: "approved" | "removed" | "pending") {
-  setState((s) => audit({ ...s, admin: { ...s.admin, moderation: { ...s.admin.moderation, [itemId]: decision } } }, decision === "pending" ? "Reopened item" : decision === "approved" ? "Approved content" : "Removed content", label));
-}
-export function adminSetInstitution(id: string, name: string, status: "verified" | "pending" | "rejected") {
-  setState((s) => audit({ ...s, admin: { ...s.admin, institutionStatus: { ...s.admin.institutionStatus, [id]: status } } }, `Set institution ${status}`, name));
-}
-export function adminSetOpportunity(id: string, title: string, status: "published" | "hidden") {
-  setState((s) => audit({ ...s, admin: { ...s.admin, opportunityStatus: { ...s.admin.opportunityStatus, [id]: status } } }, status === "hidden" ? "Hid opportunity" : "Published opportunity", title));
-}
-export function adminUpdateSettings(patch: Partial<AppState["admin"]["settings"]>) {
-  setState((s) => audit({ ...s, admin: { ...s.admin, settings: { ...s.admin.settings, ...patch } } }, "Changed platform settings", Object.keys(patch).join(", ")));
 }

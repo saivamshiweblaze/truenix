@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Avatar, DemoMark } from "@/components/ui/primitives";
+import { Avatar } from "@/components/ui/primitives";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { useAppState } from "@/lib/store/store";
@@ -39,7 +39,6 @@ export function CommentThread({ targetId, autoFocus, placeholder = "Add a though
                       {p?.name ?? "Member"}
                     </Link>
                     <span className="text-micro text-mute">{timeAgo(c.createdAt)}</span>
-                    {c.demo && <DemoMark />}
                   </div>
                   <p className="mt-0.5 whitespace-pre-line text-ui text-charcoal">{c.body}</p>
                   {c.authorId === "me" && (

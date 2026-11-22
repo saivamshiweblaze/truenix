@@ -4,6 +4,7 @@ import type {
   IdeaStage,
   IndustryId,
   OpportunityKind,
+  OrgKind,
   PostKind,
   ResearchCategory,
   RoleId,
@@ -43,7 +44,8 @@ export const ROLES: RoleDef[] = [
   { id: "student_idea", label: "Student with an idea", short: "Student founder", description: "You have an idea and want to research, test and build it." },
   { id: "student_explorer", label: "Student exploring", short: "Explorer", description: "No idea yet. You want to discover problems, people and projects." },
   { id: "founder", label: "Independent founder", short: "Founder", description: "You are building a venture and need research, talent and feedback." },
-  { id: "expert", label: "Professional or industry expert", short: "Expert", description: "You review ideas and share knowledge from your field." },
+  { id: "professional", label: "Industry professional", short: "Professional", description: "You work in an industry and want to contribute, advise or join a venture." },
+  { id: "expert", label: "Domain expert", short: "Expert", description: "You review ideas and share knowledge from your field." },
   { id: "mentor", label: "Mentor", short: "Mentor", description: "You guide founders and students through their early decisions." },
   { id: "participant", label: "Research participant", short: "Participant", description: "You take part in interviews and studies that help founders learn." },
   { id: "institution_admin", label: "Institution administrator", short: "Institution", description: "You run innovation programmes for a university or institution." },
@@ -112,6 +114,20 @@ export const OPPORTUNITY_KIND_LABEL: Record<OpportunityKind, string> = {
   university: "University programme",
   event: "Event",
   industry: "Industry programme",
+  internship: "Internship",
+  scholarship: "Scholarship",
+  workshop: "Workshop",
+  startup_programme: "Startup programme",
+};
+
+export const ORG_KIND_LABEL: Record<OrgKind, string> = {
+  university: "University",
+  college: "College",
+  incubator: "Incubator",
+  accelerator: "Accelerator",
+  company: "Company",
+  industry_partner: "Industry organisation",
+  research_org: "Research organisation",
 };
 
 export const RESEARCH_CATEGORIES: { id: ResearchCategory; label: string }[] = [

@@ -8,7 +8,7 @@ import { Dialog } from "@/components/ui/overlay";
 import { EmptyState, PageSkeleton } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 import { useAppState } from "@/lib/store/store";
-import { allPeople, feedPosts, publicIdeas } from "@/lib/store/selectors";
+import { allPeople, feedPosts, isPersonListed, publicIdeas } from "@/lib/store/selectors";
 import { startThread, toggleConnect, toggleFollowPerson } from "@/lib/store/actions";
 import { ProfileView } from "@/features/community/profile-view";
 
@@ -20,7 +20,7 @@ function PersonProfile() {
   const [msgOpen, setMsgOpen] = useState(false);
   const [msg, setMsg] = useState("");
 
-  if (!person || s.admin.userStatus[person.id] === "suspended") {
+  if (!person || !isPersonListed(s, person.id)) {
     return <EmptyState title="Profile not available" body="This member may have left or the link may be wrong." action={<ButtonLink href="/community?tab=people">Browse people</ButtonLink>} />;
   }
   const following = s.following.people.includes(person.id);
@@ -38,7 +38,7 @@ function PersonProfile() {
               variant={requested ? "secondary" : "primary"}
               onClick={() => {
                 toggleConnect(person.id);
-                toast(requested ? "Request withdrawn" : "Connection request sent", { body: requested ? undefined : "Demo profile — no reply will come." });
+                toast(requested ? "Request withdrawn" : "Connection request sent", { body: requested || !person.demo ? undefined : "This is a sample profile, so requests aren’t delivered." });
               }}
             >
               {requested ? "Request sent" : "Connect"}
@@ -63,7 +63,7 @@ function PersonProfile() {
         open={msgOpen}
         onClose={() => setMsgOpen(false)}
         title={`Message ${person.name}`}
-        description="Demo profile: your message is saved in your inbox, but this person is fictional and will not reply."
+        description={person.demo ? "This is a sample profile. Your message is saved in your inbox but isn’t delivered." : undefined}
         footer={
           <>
             <Button variant="ghost" onClick={() => setMsgOpen(false)}>

@@ -104,7 +104,7 @@ test("feed filters, search, appreciation, saving and comments", async ({ page })
   await expect(page.getByRole("link", { name: /Cauce/ }).first()).toBeVisible();
 });
 
-test("AI Researcher produces a labelled demonstration report that can be saved", async ({ page }) => {
+test("AI Researcher produces a clearly labelled research plan that can be saved", async ({ page }) => {
   await signInAsPersona(page, "Independent founder");
   await page.goto("/research");
   await page.getByRole("button", { name: "Run research" }).click();
@@ -113,7 +113,7 @@ test("AI Researcher produces a labelled demonstration report that can be saved",
   await page.getByRole("radio", { name: "Quick scan" }).click();
   await page.getByRole("button", { name: "Run research" }).click();
   await expect(page.getByLabel("Research progress")).toBeVisible();
-  await expect(page.getByText("Demonstration report.", { exact: false }).first()).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Research plan, not findings.", { exact: false }).first()).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole("heading", { name: "Executive summary" })).toBeVisible();
   await page.getByRole("button", { name: "Save research" }).click();
   await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
@@ -130,8 +130,8 @@ test("validation workspace keeps evidence types separate", async ({ page }) => {
   await expect(page).toHaveURL(/\/validate\/idea-/);
 
   const panel = page.getByRole("region", { name: /Problem validation/ });
-  await panel.getByRole("button", { name: /Draft AI analysis/ }).click();
-  await expect(panel.getByText("AI analysis · demo")).toBeVisible();
+  await panel.getByRole("button", { name: /Draft analysis from template/ }).click();
+  await expect(panel.getByText("AI analysis · template")).toBeVisible();
 
   await panel.getByLabel("Evidence type").selectOption({ label: "Customer response" });
   await panel.getByRole("textbox", { name: "Evidence", exact: true }).fill("Said she bought a drill for one weekend and has not used it since.");
@@ -162,35 +162,39 @@ test("notifications can be read and messages sent", async ({ page }) => {
   await expect(page.getByText("Thanks — I would love a slot.")).toBeVisible();
 });
 
-test("demo role switcher changes the interface and admin console works", async ({ page }) => {
+test("role areas are gated, developer tools are hidden, and the admin console works", async ({ page }) => {
   const errors = trackErrors(page);
   await signInAsPersona(page, "Student exploring");
   await expect(page.getByRole("heading", { name: /Good to see you/ })).toBeVisible();
   await expect(page.getByRole("link", { name: "Admin console" })).toHaveCount(0);
+  // The role switcher is a developer tool and must not appear in customer builds.
+  await expect(page.getByRole("button", { name: /Dev tools/ })).toHaveCount(0);
 
   await page.goto("/admin");
   await expect(page.getByText(/This area is for platform administrators/)).toBeVisible();
 
-  await page.goto("/home");
-  await page.getByRole("button", { name: /Demo role/ }).click();
-  await page.getByRole("menuitem", { name: "Platform administrator" }).click();
+  await signInAsPersona(page, "Platform administrator");
   await expect(page).toHaveURL(/\/admin$/);
   await expect(page.getByRole("heading", { name: "Platform overview" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Reported content" }).click();
-  await page.getByRole("button", { name: "Remove content" }).first().click();
-  await expect(page.getByText("Resolved")).toBeVisible();
-  await page.getByRole("link", { name: "Audit activity" }).click();
-  await expect(page.locator("tbody tr").first()).toContainText("Removed content");
+  // Phase 1.8: reported content is handled from the moderation queue, one report at a time.
+  await page.getByRole("link", { name: "Moderation queue", exact: true }).click();
+  await page.getByRole("link", { name: /What should a two-person startup do about security/ }).click();
+  const view = page.locator("[data-admin-page]:visible");
+  await view.getByLabel("Content action").selectOption({ label: "Remove the content" });
+  await view.getByLabel("Resolution").fill("Promotional link removed per community guidelines.");
+  await page.getByRole("button", { name: "Resolve with action" }).click();
+  await expect(page.getByText("Action taken").first()).toBeVisible();
+  await page.getByRole("link", { name: "Audit log", exact: true }).click();
+  await expect(page.locator("[data-admin-page]:visible tbody tr").first()).toContainText("Removed content");
 
-  for (const label of ["Users", "Roles", "Idea moderation", "Content moderation", "Institutions", "Opportunities", "Platform settings"]) {
+  for (const label of ["Users", "Admin roles", "Ideas and projects", "Community content", "Institutions", "Opportunities", "Settings and data"]) {
     await page.getByRole("link", { name: label, exact: true }).click();
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   }
 
-  await page.getByRole("button", { name: /Demo role/ }).click();
-  await page.getByRole("menuitem", { name: "Institution administrator" }).click();
+  await signInAsPersona(page, "Institution administrator");
   await expect(page).toHaveURL(/\/institution/);
-  await expect(page.getByText("Fictional institution")).toBeVisible();
+  await expect(page.getByText("Sample data", { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });

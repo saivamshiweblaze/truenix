@@ -1,17 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ChoiceChip, TextArea, TextField } from "@/components/ui/field";
+import { TextArea, TextField } from "@/components/ui/field";
 import { Dialog } from "@/components/ui/overlay";
 import { toast } from "@/components/ui/toast";
-import { INDUSTRIES, SKILLS } from "@/config/taxonomy";
 import { updateUser } from "@/lib/store/actions";
 import { useAppState } from "@/lib/store/store";
 import { feedPosts, meAsPerson } from "@/lib/store/selectors";
-import type { IndustryId } from "@/lib/types";
 import { ProfileView } from "@/features/community/profile-view";
+import { SectionHeading } from "@/components/ui/primitives";
+import { ButtonLink } from "@/components/ui/button";
+import { useTransientFile } from "@/lib/store/transient-files";
+import { displayValue, flowFor, isVisible, onboardingRoleFor } from "@/features/onboarding/config";
+import { preferenceLabel, preferencesFor, readPreferences } from "@/features/preferences/preferences";
+import { formatBytes } from "@/lib/validation";
 
 export default function MyProfilePage() {
   const s = useAppState();
@@ -24,14 +29,13 @@ export default function MyProfilePage() {
     organisation: user.organisation,
     location: user.location,
     bio: user.bio,
-    skills: user.skills,
-    interests: user.interests,
-    collaboration: user.collaboration.join("\n"),
   });
   const [error, setError] = useState<string>();
+  const photo = useTransientFile("photo");
+  const resume = useTransientFile("resume");
 
   const openEdit = () => {
-    setForm({ name: user.name, headline: user.headline, organisation: user.organisation, location: user.location, bio: user.bio, skills: user.skills, interests: user.interests, collaboration: user.collaboration.join("\n") });
+    setForm({ name: user.name, headline: user.headline, organisation: user.organisation, location: user.location, bio: user.bio });
     setOpen(true);
   };
 
@@ -41,14 +45,11 @@ export default function MyProfilePage() {
       ...form,
       name: form.name.trim().slice(0, 80),
       headline: form.headline.trim().slice(0, 140),
-      collaboration: form.collaboration.split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 6),
     });
     setError(undefined);
     setOpen(false);
     toast("Profile updated");
   };
-
-  const toggle = <T,>(l: T[], v: T) => (l.includes(v) ? l.filter((x) => x !== v) : [...l, v]);
 
   return (
     <>
@@ -57,6 +58,13 @@ export default function MyProfilePage() {
         person={me}
         ideas={s.ideas.filter((i) => i.status === "submitted")}
         posts={feedPosts(s).filter((p) => p.authorId === "me")}
+        photo={photo?.url}
+        details={
+          <>
+            <PreferenceSummary />
+            <RoleDetails resumeHeld={!!resume} />
+          </>
+        }
         actions={
           <Button variant="secondary" onClick={openEdit}>
             <Pencil size={15} aria-hidden /> Edit profile
@@ -85,29 +93,111 @@ export default function MyProfilePage() {
             <TextField label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} maxLength={80} />
           </div>
           <TextArea label="About" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={600} />
-          <TextArea label="Collaboration preferences" hint="One per line, e.g. ‘Open to frontend work, 10 hours a week’." rows={3} value={form.collaboration} onChange={(e) => setForm({ ...form, collaboration: e.target.value })} maxLength={600} />
-          <fieldset>
-            <legend className="mb-2 text-ui font-medium text-charcoal">Skills</legend>
-            <div className="flex flex-wrap gap-2">
-              {SKILLS.map((k) => (
-                <ChoiceChip key={k} selected={form.skills.includes(k)} onToggle={() => setForm({ ...form, skills: toggle(form.skills, k) })}>
-                  {k}
-                </ChoiceChip>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend className="mb-2 text-ui font-medium text-charcoal">Interests</legend>
-            <div className="flex flex-wrap gap-2">
-              {INDUSTRIES.map((i) => (
-                <ChoiceChip key={i.id} selected={form.interests.includes(i.id)} onToggle={() => setForm({ ...form, interests: toggle<IndustryId>(form.interests, i.id) })}>
-                  {i.label}
-                </ChoiceChip>
-              ))}
-            </div>
-          </fieldset>
+          <p className="rounded-sm bg-surface px-3 py-2.5 text-meta text-sub">
+            Skills, industries, technologies and collaboration preferences are edited in one place:{" "}
+            <Link href="/settings?tab=preferences" className="font-medium text-ink underline underline-offset-4">
+              Settings › Interests and preferences
+            </Link>
+            .
+          </p>
         </div>
       </Dialog>
     </>
+  );
+}
+
+/** Private details collected during onboarding. Visible only to the signed-in person. */
+function RoleDetails({ resumeHeld }: { resumeHeld: boolean }) {
+  const user = useAppState().user!;
+  const doc = user.documents?.resume;
+  const flow = user.profileKind ? flowFor(user.profileKind) : undefined;
+  const academic = flow?.steps.find((st) => st.id === "academic");
+  const answers = user.profile ?? {};
+  if (!user.profileKind) {
+    return (
+      <section>
+        <SectionHeading title="Role profile" />
+        <p className="text-meta text-sub">Add the details founders and institutions look for.</p>
+        <ButtonLink href="/onboarding" variant="secondary" size="sm" className="mt-3">
+          Complete your profile
+        </ButtonLink>
+      </section>
+    );
+  }
+  return (
+    <section aria-labelledby="private-details" className="rounded-md border border-line p-4">
+      <SectionHeading title="Your details" id="private-details" action={<span className="eyebrow">Only you</span>} />
+      <dl className="flex flex-col gap-2.5 text-meta">
+        {user.phone && (
+          <div>
+            <dt className="text-sub">Phone</dt>
+            <dd className="text-ink">
+              {user.phone} <span className="text-mute">· {user.phoneVerified ? "verified" : "unverified"}</span>
+            </dd>
+          </div>
+        )}
+        {user.linkedin && (
+          <div>
+            <dt className="text-sub">LinkedIn</dt>
+            <dd className="truncate">
+              <a href={user.linkedin} target="_blank" rel="noopener noreferrer" className="text-ink underline underline-offset-4">
+                {user.linkedin.replace(/^https?:\/\/(www\.)?/, "")}
+              </a>
+            </dd>
+          </div>
+        )}
+        {academic?.fields
+          .filter((f) => isVisible(f, answers) && answers[f.id] !== undefined && answers[f.id] !== "")
+          .map((f) => (
+            <div key={f.id}>
+              <dt className="text-sub">{f.label}</dt>
+              <dd className="text-ink">{displayValue(f, answers[f.id], answers)}</dd>
+            </div>
+          ))}
+        {doc && (
+          <div>
+            <dt className="text-sub">Resume</dt>
+            <dd className="text-ink">
+              {doc.name} <span className="text-mute">· {formatBytes(doc.size)}</span>
+              <p className="mt-0.5 text-mute">
+                {resumeHeld ? "Held in this tab only — it isn’t stored." : "Not stored. You’ll be asked to upload it again once secure storage is available."}
+              </p>
+            </dd>
+          </div>
+        )}
+      </dl>
+    </section>
+  );
+}
+
+/** Interests and preferences, read from the single source of truth, with a link to edit them. */
+function PreferenceSummary() {
+  const user = useAppState().user!;
+  const prefs = readPreferences(user);
+  const defs = preferencesFor(user.profileKind ?? onboardingRoleFor(user.role)).filter((d) => prefs[d.key].length);
+  return (
+    <section aria-labelledby="prefs-title">
+      <SectionHeading
+        title="Interests and preferences"
+        id="prefs-title"
+        action={
+          <Link href="/settings?tab=preferences" className="text-meta font-medium text-sub underline-offset-4 hover:text-ink hover:underline">
+            Edit
+          </Link>
+        }
+      />
+      {defs.length ? (
+        <dl className="flex flex-col gap-3 text-meta">
+          {defs.map((d) => (
+            <div key={d.key}>
+              <dt className="text-sub">{d.label}</dt>
+              <dd className="mt-0.5 text-ink">{prefs[d.key].map((v) => preferenceLabel(d.key, v)).join(", ")}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-meta text-sub">Add industries, skills and technologies so we can suggest relevant people and projects.</p>
+      )}
+    </section>
   );
 }

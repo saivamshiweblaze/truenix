@@ -10,11 +10,11 @@ import type {
   Notification,
   Post,
   ResearchReport,
-  RoleId,
   Task,
   Thread,
   ValidationWorkspace,
 } from "@/lib/types";
+import { seedPlatform, type PlatformState } from "./platform";
 
 export interface NotificationPrefs {
   comments: boolean;
@@ -59,14 +59,12 @@ export interface AppState {
   notificationPrefs: NotificationPrefs;
   privacy: PrivacyPrefs;
   admin: {
-    userStatus: Record<string, "active" | "suspended">;
-    roleOverrides: Record<string, RoleId>;
-    moderation: Record<string, "pending" | "approved" | "removed">;
-    institutionStatus: Record<string, "verified" | "pending" | "rejected">;
-    opportunityStatus: Record<string, "published" | "hidden">;
+    /** Append-only record of administrative actions (newest first). */
     audit: AuditEntry[];
     settings: { openRegistration: boolean; requireIdeaReview: boolean; researchEnabled: boolean };
   };
+  /** Shared platform data: other members and everything operators manage. See platform.ts. */
+  platform: PlatformState;
 }
 
 export const initialState = (): AppState => ({
@@ -97,14 +95,10 @@ export const initialState = (): AppState => ({
   notificationPrefs: { comments: true, follows: true, collaboration: true, opportunities: true, research: true, weeklyDigest: false },
   privacy: { profileVisibility: "members", showOrganisation: true, allowMessages: "everyone", showActivity: true },
   admin: {
-    userStatus: {},
-    roleOverrides: {},
-    moderation: {},
-    institutionStatus: {},
-    opportunityStatus: {},
     audit: [],
     settings: { openRegistration: true, requireIdeaReview: true, researchEnabled: true },
   },
+  platform: seedPlatform(),
 });
 
 /**
@@ -121,7 +115,7 @@ export const persistedSchema = z
         id: z.literal("me"),
         name: z.string().max(120),
         email: z.string().max(200),
-        role: z.enum(["student_idea", "student_explorer", "founder", "expert", "mentor", "participant", "institution_admin", "platform_admin"]),
+        role: z.enum(["student_idea", "student_explorer", "founder", "professional", "expert", "mentor", "participant", "institution_admin", "platform_admin"]),
         onboarded: z.boolean(),
       })
       .passthrough()
@@ -135,5 +129,6 @@ export const persistedSchema = z
     following: z.object({ ideas: z.array(z.string()), people: z.array(z.string()) }),
     tasks: arr,
     admin: z.object({ audit: arr }).passthrough(),
+    platform: z.object({ seedVersion: z.number(), people: arr, accounts: arr, opportunities: arr }).passthrough().optional(),
   })
   .passthrough();

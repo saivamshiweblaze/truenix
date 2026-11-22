@@ -3,6 +3,28 @@
 import { useSyncExternalStore } from "react";
 import { STORAGE_KEY } from "@/config/brand";
 import { initialState, persistedSchema, type AppState } from "./state";
+import { seedPlatform, SEED_VERSION, type PlatformState } from "./platform";
+
+/** Uses the stored platform data when it matches the current seed version; otherwise seeds once. */
+function mergePlatform(base: PlatformState, stored: PlatformState | undefined): PlatformState {
+  if (!stored || stored.seedVersion !== SEED_VERSION) return base;
+  return {
+    ...base,
+    ...stored,
+    config: {
+      ...base.config,
+      ...stored.config,
+      identity: { ...base.config.identity, ...stored.config?.identity },
+      features: { ...base.config.features, ...stored.config?.features },
+      moderation: { ...base.config.moderation, ...stored.config?.moderation },
+      notifications: { ...base.config.notifications, ...stored.config?.notifications },
+      retention: { ...base.config.retention, ...stored.config?.retention },
+      maintenance: { ...base.config.maintenance, ...stored.config?.maintenance },
+      security: { ...base.config.security, ...stored.config?.security },
+      taxonomy: { ...base.config.taxonomy, ...stored.config?.taxonomy },
+    },
+  };
+}
 
 /**
  * Minimal external store for Phase 1 demonstration state.
@@ -46,6 +68,7 @@ function load(): AppState {
       notificationPrefs: { ...base.notificationPrefs, ...data.notificationPrefs },
       privacy: { ...base.privacy, ...data.privacy },
       admin: { ...base.admin, ...data.admin, settings: { ...base.admin.settings, ...data.admin?.settings } },
+      platform: mergePlatform(base.platform, data.platform),
     };
   } catch {
     return initialState();
@@ -68,6 +91,14 @@ export function setState(updater: (s: AppState) => AppState) {
   snapshot = { state: next, hydrated: snapshot.hydrated };
   persist(next);
   emit();
+}
+
+/**
+ * Rebuilds the platform data set from the seed files. The audit log is append-only, so it is
+ * kept, and the reset itself is recorded by the caller (see admin-actions resetDemoData).
+ */
+export function resetPlatformData(update: (s: AppState) => AppState) {
+  setState((s) => update({ ...s, platform: seedPlatform() }));
 }
 
 export function resetStore() {

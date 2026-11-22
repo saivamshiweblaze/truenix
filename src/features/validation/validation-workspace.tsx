@@ -17,20 +17,25 @@ import { AI_ALLOWED, allowedEvidence, analysisProvider, summarise } from "@/lib/
 import type { EvidenceItem, EvidenceType, SectionStatus, ValidationSectionId } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 
+/**
+ * Evidence types, from guesses to proof. Only evidence that came from real people or experiments
+ * (customer responses, experiment results) uses the positive emerald — never AI or assumptions.
+ */
 const TYPE_STYLE: Record<EvidenceType, string> = {
   assumption: "border-dashed border-line-strong text-sub",
-  ai_analysis: "border-line-strong text-sub",
-  public_research: "border-charcoal text-charcoal",
-  expert_opinion: "border-ink text-ink",
-  customer_response: "border-ink bg-ink text-white",
-  experiment_result: "border-ink bg-ink text-white",
+  ai_analysis: "border-dashed border-ink text-ink",
+  public_research: "border-line-strong bg-surface text-charcoal",
+  expert_opinion: "border-ink bg-ink text-white",
+  customer_response: "border-positive bg-positive-wash text-positive-ink",
+  experiment_result: "border-positive bg-positive-wash text-positive-ink",
 };
+const LADDER: EvidenceType[] = ["assumption", "ai_analysis", "public_research", "expert_opinion", "customer_response", "experiment_result"];
 
 function EvidenceBadge({ type, demo }: { type: EvidenceType; demo?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-1 rounded-xs border px-1.5 py-px text-micro", TYPE_STYLE[type])}>
       {evidenceLabel(type)}
-      {demo && " · demo"}
+      {demo && " · template"}
     </span>
   );
 }
@@ -85,9 +90,9 @@ function SectionPanel({ ideaId, sectionId }: { ideaId: string; sectionId: Valida
   const draftAi = async () => {
     setDrafting(true);
     const out = await analysisProvider.draft(idea, sectionId);
-    addEvidence(ideaId, { sectionId, type: "ai_analysis", text: out, source: "Demo analysis provider (no AI model connected)", demoGenerated: true });
+    addEvidence(ideaId, { sectionId, type: "ai_analysis", text: out, source: "TRUEVIX analysis template (no AI model connected)", demoGenerated: true });
     setDrafting(false);
-    toast("Demo analysis added", { body: "Labelled as AI analysis. It is not evidence." });
+    toast("Template analysis added", { body: "Labelled as AI analysis. It is not evidence." });
   };
 
   return (
@@ -145,7 +150,7 @@ function SectionPanel({ ideaId, sectionId }: { ideaId: string; sectionId: Valida
           {AI_ALLOWED.includes(sectionId) && (
             <Button size="sm" variant="ghost" onClick={draftAi} disabled={drafting}>
               {drafting ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <Sparkles size={14} aria-hidden />}
-              Draft AI analysis (demo)
+              Draft analysis from template
             </Button>
           )}
         </div>
@@ -179,6 +184,7 @@ export function ValidationWorkspaceView() {
   }
   if (!ws) return null;
   const sum = summarise(ws);
+  const nextArea = VALIDATION_SECTIONS.find((v) => ws.sections[v.id].status === "in_progress") ?? VALIDATION_SECTIONS.find((v) => ws.sections[v.id].status === "not_started");
 
   return (
     <>
@@ -204,13 +210,21 @@ export function ValidationWorkspaceView() {
         }
       />
 
-      <section aria-label="Validation summary" className="mb-10 grid grid-cols-2 gap-6 md:grid-cols-4">
-        <Stat label="Areas complete" value={`${sum.done}/${sum.total}`} />
-        <Stat label="Customer responses" value={sum.byType.customer_response ?? 0} note="Recorded by you" />
-        <Stat label="Expert opinions" value={sum.byType.expert_opinion ?? 0} />
-        <Stat label="Experiment results" value={sum.byType.experiment_result ?? 0} />
-        <div className="col-span-2 md:col-span-4">
-          <Progress value={(sum.done / sum.total) * 100} label="Validation areas complete" />
+      <section aria-label="Validation summary" className="mb-8 grid gap-4 rounded-lg border border-line p-5 md:grid-cols-[220px_minmax(0,1fr)] md:gap-8 md:p-6">
+        <div>
+          <Stat label="Areas complete" value={`${sum.done}/${sum.total}`} note={`${sum.started - sum.done} in progress`} />
+          <Progress value={(sum.done / sum.total) * 100} size="md" tone={sum.realEvidence > 0 ? "positive" : "ink"} label="Validation areas complete" className="mt-3" />
+        </div>
+        <div>
+          <p className="text-meta text-sub">Evidence recorded, from guesses to proof</p>
+          <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            {LADDER.map((t) => (
+              <li key={t} className="flex flex-col gap-1.5 rounded-sm bg-surface p-2.5">
+                <span className={cn("font-display text-[1.375rem] font-bold leading-none tabular-nums", (t === "customer_response" || t === "experiment_result") && (sum.byType[t] ?? 0) > 0 ? "text-positive-ink" : "text-ink")}>{sum.byType[t] ?? 0}</span>
+                <EvidenceBadge type={t} />
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -226,7 +240,8 @@ export function ValidationWorkspaceView() {
         ]}
       />
 
-      <div className="mt-2 max-w-3xl">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="mt-2 min-w-0">
         {tab === "workspace" &&
           VALIDATION_SECTIONS.map((v, i) => {
             const st = ws.sections[v.id].status;
@@ -245,7 +260,7 @@ export function ValidationWorkspaceView() {
                 meta={
                   <span className="flex items-center gap-3 text-meta text-sub">
                     {n > 0 && <span className="tabular-nums">{n} item{n === 1 ? "" : "s"}</span>}
-                    <span className={cn("h-2 w-2 rounded-full", st === "done" ? "bg-ink" : st === "in_progress" ? "bg-accent" : "border border-line-strong")} aria-label={st.replace("_", " ")} />
+                    <span className={cn("h-2 w-2 rounded-full", st === "done" ? "bg-positive" : st === "in_progress" ? "bg-accent" : "border border-line-strong")} aria-label={st.replace("_", " ")} />
                   </span>
                 }
               >
@@ -354,6 +369,48 @@ export function ValidationWorkspaceView() {
             </div>
           </article>
         )}
+      </div>
+      <aside aria-labelledby="outstanding" className="flex flex-col gap-6 lg:pt-4">
+        <section className="rounded-md bg-surface p-4">
+          <h2 id="outstanding" className="text-section font-bold">
+            Outstanding work
+          </h2>
+          {nextArea ? (
+            <button type="button" onClick={() => (setTab("workspace"), setOpen(nextArea.id))} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm bg-paper px-3 py-2.5 text-left text-ui font-medium text-ink shadow-card hover:shadow-lift">
+              <span>
+                <span className="block text-micro font-normal text-sub">Next area</span>
+                {nextArea.label}
+              </span>
+              <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-accent" />
+            </button>
+          ) : (
+            <p className="mt-2 text-meta text-positive-ink">Every area is marked done.</p>
+          )}
+          <dl className="mt-4 flex flex-col gap-2 text-meta">
+            <div className="flex justify-between gap-3">
+              <dt className="text-sub">Areas not started</dt>
+              <dd className="font-medium tabular-nums">{sum.total - sum.started}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-sub">Open questions</dt>
+              <dd className="font-medium tabular-nums">{ws.openQuestions.filter((q) => !q.resolved).length}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-sub">Evidence from people or experiments</dt>
+              <dd className={cn("font-medium tabular-nums", sum.realEvidence > 0 && "text-positive-ink")}>{sum.realEvidence}</dd>
+            </div>
+          </dl>
+          {sum.realEvidence === 0 && <p className="mt-3 text-micro text-mute">AI analysis and assumptions help you plan, but only responses from people and experiment results count as evidence.</p>}
+        </section>
+        <section>
+          <h2 className="text-ui font-semibold">Status key</h2>
+          <ul className="mt-2 flex flex-col gap-1.5 text-meta text-sub">
+            <li className="flex items-center gap-2"><span aria-hidden className="h-2 w-2 rounded-full border border-line-strong" /> Not started</li>
+            <li className="flex items-center gap-2"><span aria-hidden className="h-2 w-2 rounded-full bg-accent" /> In progress</li>
+            <li className="flex items-center gap-2"><span aria-hidden className="h-2 w-2 rounded-full bg-positive" /> Done</li>
+          </ul>
+        </section>
+      </aside>
       </div>
     </>
   );

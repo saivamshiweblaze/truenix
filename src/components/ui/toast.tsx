@@ -52,7 +52,7 @@ export function Toaster() {
             className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-md bg-ink px-4 py-3 text-white shadow-overlay"
             role="status"
           >
-            <span aria-hidden className={t.tone === "accent" ? "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" : "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/60"} />
+            <span aria-hidden className={t.tone === "accent" ? "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent-on-dark" : "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white/60"} />
             <div className="flex-1">
               <p className="text-ui font-medium">{t.title}</p>
               {t.body && <p className="mt-0.5 text-meta text-white/70">{t.body}</p>}

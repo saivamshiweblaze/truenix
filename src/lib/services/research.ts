@@ -51,7 +51,7 @@ function buildSections(req: ResearchRequest): ResearchSection[] {
     {
       id: "summary",
       heading: "Executive summary",
-      body: `This demonstration report outlines how a research pass on “${s}” would be structured, with a focus on ${cats || "market and customers"}. It shows where evidence is needed rather than providing evidence. Treat every statement below as a prompt to verify, not a finding.`,
+      body: `This report outlines how a research pass on “${s}” would be structured, with a focus on ${cats || "market and customers"}. It shows where evidence is needed rather than providing evidence. Treat every statement below as a prompt to verify, not a finding.`,
     },
     {
       id: "market",
@@ -140,7 +140,7 @@ export function reportToMarkdown(r: ResearchReport): string {
   const lines = [
     `# ${r.question}`,
     "",
-    r.provenance === "demo" ? "> Demonstration report generated locally. No live AI model or web search was used." : "",
+    r.provenance === "demo" ? "> Research plan built from TRUEVIX templates. No live AI model or web search was used." : "",
     "",
   ];
   for (const s of r.sections) {

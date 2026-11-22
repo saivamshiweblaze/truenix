@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ColumnChart, HBarChart } from "@/components/ui/charts";
-import { DemoMark, PageHeader, SectionHeading, Stat, StatusDot } from "@/components/ui/primitives";
+import { SampleMark, PageHeader, SectionHeading, Stat, StatusDot } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 import { RoleGate } from "@/components/shell/role-gate";
 import { industryLabel, stageLabel } from "@/config/taxonomy";
@@ -14,6 +14,7 @@ import { allPeople, feedPosts, publicIdeas } from "@/lib/store/selectors";
 
 function InstitutionDashboard() {
   const s = useAppState();
+  const myInstitution = typeof s.user?.profile?.institutionName === "string" ? s.user.profile.institutionName : "";
   const students = allPeople(s).filter((p) => p.organisation === I.name);
   const ideas = publicIdeas(s).filter((i) => students.some((p) => p.id === i.ownerId));
   const challenges = feedPosts(s).filter((p) => p.kind === "challenge");
@@ -24,16 +25,16 @@ function InstitutionDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "innovation-pipeline-demo.csv";
+    a.download = "innovation-pipeline-sample.csv";
     a.click();
     URL.revokeObjectURL(url);
-    toast("Report exported", { body: "Demo pipeline as CSV." });
+    toast("Report exported", { body: "Pipeline (sample data) as CSV." });
   };
 
   return (
     <>
       <PageHeader
-        title={I.name}
+        title={myInstitution || I.name}
         description="Student participation, ideas, programmes and the incubation pipeline."
         actions={
           <Button variant="secondary" onClick={exportCsv}>
@@ -42,7 +43,7 @@ function InstitutionDashboard() {
         }
       >
         <p className="mt-3 flex flex-wrap items-center gap-2 text-meta text-sub">
-          <DemoMark>Fictional institution</DemoMark> All figures are demonstration data. This institution is not a real or partner organisation.
+          <SampleMark>Sample data</SampleMark> Figures below are illustrative{myInstitution ? ` and are not ${myInstitution}’s records` : ""}. They will be replaced by your institution’s data once records are connected.
         </p>
       </PageHeader>
 
@@ -116,7 +117,7 @@ function InstitutionDashboard() {
                   <td className="py-3 pr-4 text-sub">{industryLabel(i.industry)}</td>
                   <td className="py-3 pr-4 text-sub">{stageLabel(i.stage)}</td>
                   <td className="py-3">
-                    <StatusDot tone={i.validationStatus === "not_started" ? "mute" : "accent"} label={{ not_started: "Not started", in_progress: "In progress", evidence_collected: "Evidence recorded" }[i.validationStatus]} />
+                    <StatusDot tone={i.validationStatus === "not_started" ? "mute" : i.validationStatus === "evidence_collected" ? "positive" : "ink"} label={{ not_started: "Not started", in_progress: "In progress", evidence_collected: "Evidence recorded" }[i.validationStatus]} />
                   </td>
                 </tr>
               ))}

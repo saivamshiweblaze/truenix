@@ -6,7 +6,7 @@ import { TextField } from "@/components/ui/field";
 import { TextLink } from "@/components/ui/primitives";
 import { requestPasswordReset } from "@/lib/store/actions";
 import { emailSchema } from "@/lib/validation";
-import { DemoAuthNotice } from "@/features/auth/demo-notice";
+import { ServiceNotice } from "@/features/auth/service-notice";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -26,15 +26,15 @@ export default function ForgotPasswordPage() {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <h1 className="text-title font-semibold">Check your inbox</h1>
+          <h1 className="text-title font-bold">Continue your reset</h1>
           <p className="mt-2 text-body text-sub">
-            If an account exists for <span className="font-medium text-ink">{email}</span>, the live product would email a reset link. In this demonstration, open the reset step directly.
+            If an account exists for <span className="font-medium text-ink">{email}</span>, you can choose a new password now.
           </p>
         </div>
         <ButtonLink href="/reset-password" size="lg">
           Open the reset step
         </ButtonLink>
-        <DemoAuthNotice>No email was sent. Password reset is simulated in this phase.</DemoAuthNotice>
+        <ServiceNotice>No email was sent. Email delivery isn’t connected yet, so the reset continues on this device.</ServiceNotice>
       </div>
     );
   }
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-title font-semibold">Reset your password</h1>
+        <h1 className="text-title font-bold">Reset your password</h1>
         <p className="mt-2 text-body text-sub">Enter the email you signed up with.</p>
       </div>
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">

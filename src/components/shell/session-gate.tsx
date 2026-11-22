@@ -3,20 +3,18 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useAppSnapshot } from "@/lib/store/store";
-import { LogoMark } from "./logo";
+import { BrandLoader } from "./brand-loader";
 
 export function Splash() {
   return (
-    <div role="status" aria-label="Loading your workspace" className="flex min-h-dvh items-center justify-center">
-      <div className="animate-pulse">
-        <LogoMark size={28} />
-      </div>
+    <div className="flex min-h-dvh items-center justify-center">
+      <BrandLoader label="Loading your workspace" />
     </div>
   );
 }
 
 /**
- * Client-side routing gate for the demo session. This is a UX redirect only:
+ * Client-side routing gate for the browser-local session. This is a UX redirect only:
  * Phase 1 has no server, so nothing here is a security boundary.
  */
 export function SessionGate({ children, requireOnboarded = true }: { children: ReactNode; requireOnboarded?: boolean }) {

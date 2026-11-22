@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextArea } from "@/components/ui/field";
 import { Dialog } from "@/components/ui/overlay";
-import { DemoMark, PageHeader, StatusDot } from "@/components/ui/primitives";
+import { PageHeader, StatusDot } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 import { RoleGate } from "@/components/shell/role-gate";
 import { industryLabel, stageLabel } from "@/config/taxonomy";
@@ -38,12 +38,11 @@ function Reviews() {
           return (
             <li key={i.id} className="border-b border-line py-5">
               <div className="flex flex-wrap items-center gap-3">
-                <StatusDot tone={d === "completed" ? "ink" : d === "accepted" ? "accent" : "mute"} label={d === "completed" ? "Feedback given" : d === "accepted" ? "Accepted" : d === "declined" ? "Declined" : "Awaiting your answer"} />
+                <StatusDot tone={d === "completed" ? "positive" : d === "accepted" ? "attention" : "mute"} label={d === "completed" ? "Feedback given" : d === "accepted" ? "Accepted" : d === "declined" ? "Declined" : "Awaiting your answer"} />
                 <span className="text-meta text-sub">
                   {industryLabel(i.industry)} · {stageLabel(i.stage)}
                 </span>
                 {areas.includes(i.industry) && <span className="text-meta text-ink">Matches your expertise</span>}
-                <DemoMark>Demo request</DemoMark>
               </div>
               <Link href={`/ideas/${i.id}`} className="mt-1.5 block text-section font-semibold hover:underline">
                 {i.title.split(":")[0]}

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
 import { InlineSelect } from "@/components/ui/field";
-import { EmptyState, PageHeader } from "@/components/ui/primitives";
+import { EmptyState, PageHeader, SearchInput, Toolbar, ToolbarFilters } from "@/components/ui/primitives";
 import { Tabs } from "@/components/ui/tabs";
 import { BlueprintArt } from "@/components/illustrations/art";
 import { INDUSTRIES, OPPORTUNITY_KIND_LABEL, STAGES } from "@/config/taxonomy";
@@ -35,14 +34,21 @@ export default function OpportunitiesPage() {
     if (location !== "all") l = l.filter((o) => o.location === location);
     if (hideClosed) l = l.filter((o) => daysUntil(o.deadline) >= 0);
     if (q) l = l.filter((o) => matches(q, o.title, o.organisation, o.description, o.eligibility));
-    return [...l].sort((a, b) => a.deadline.localeCompare(b.deadline));
+    return [...l].sort((a, b) => Number(!!b.featured) - Number(!!a.featured) || a.deadline.localeCompare(b.deadline));
   })();
 
   return (
     <>
       <PageHeader
         title="Opportunities"
-        description="Incubators, accelerators, grants, hackathons, competitions and programmes. All entries in this demonstration are fictional organisations; no partnership is implied."
+        description="Incubators, accelerators, grants, hackathons and programmes, soonest deadline first."
+        meta={
+          <>
+            <span>{all.filter((o) => daysUntil(o.deadline) >= 0).length} open</span>
+            <span>{all.filter((o) => daysUntil(o.deadline) >= 0 && daysUntil(o.deadline) <= 21).length} closing within three weeks</span>
+            <span>{s.applications.length} you’re tracking</span>
+          </>
+        }
       />
       <Tabs
         label="Opportunity lists"
@@ -54,27 +60,27 @@ export default function OpportunitiesPage() {
           { value: "applications", label: "My applications", count: s.applications.length },
         ]}
       />
-      <div className="mt-5 flex flex-col gap-2 lg:flex-row lg:items-center">
-        <div className="flex h-9 flex-1 items-center gap-2 rounded-sm border border-line-strong px-3 focus-within:border-ink">
-          <Search size={15} className="text-sub" aria-hidden />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search programmes and organisations" aria-label="Search opportunities" className="h-full flex-1 bg-transparent text-ui focus:outline-none" />
-        </div>
-        <div className="flex flex-wrap gap-2">
+      <Toolbar className="mt-5">
+        <SearchInput value={q} onChange={setQ} placeholder="Search programmes and organisations" label="Search opportunities" />
+        <ToolbarFilters>
           <InlineSelect aria-label="Type" value={kind} onChange={(e) => setKind(e.target.value)} options={[{ value: "all", label: "All types" }, ...Object.entries(OPPORTUNITY_KIND_LABEL).map(([value, label]) => ({ value, label }))]} />
           <InlineSelect aria-label="Industry" value={industry} onChange={(e) => setIndustry(e.target.value)} options={[{ value: "all", label: "All industries" }, ...INDUSTRIES.map((i) => ({ value: i.id, label: i.label }))]} />
           <InlineSelect aria-label="Stage" value={stage} onChange={(e) => setStage(e.target.value)} options={[{ value: "all", label: "Any stage" }, ...STAGES.map((st) => ({ value: st.id, label: st.label }))]} />
           <InlineSelect aria-label="Location" value={location} onChange={(e) => setLocation(e.target.value)} options={[{ value: "all", label: "Anywhere" }, ...locations.map((l) => ({ value: l, label: l }))]} />
-        </div>
+        </ToolbarFilters>
+      </Toolbar>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-meta text-sub" aria-live="polite">
+          {list.length} {list.length === 1 ? "opportunity" : "opportunities"}
+        </p>
+        <label className="inline-flex items-center gap-2 text-meta text-sub">
+          <input type="checkbox" checked={hideClosed} onChange={(e) => setHideClosed(e.target.checked)} className="h-4 w-4 accent-[var(--color-ink)]" />
+          Hide closed opportunities
+        </label>
       </div>
-      <label className="mt-3 inline-flex items-center gap-2 text-meta text-sub">
-        <input type="checkbox" checked={hideClosed} onChange={(e) => setHideClosed(e.target.checked)} className="h-3.5 w-3.5 accent-[var(--color-ink)]" />
-        Hide closed opportunities
-      </label>
-      <p className="mt-4 text-meta text-sub" aria-live="polite">
-        {list.length} {list.length === 1 ? "opportunity" : "opportunities"}, soonest deadline first
-      </p>
+      <p className="mt-1 text-micro text-mute">Listings marked as samples are illustrative and imply no partnership.</p>
       {list.length ? (
-        <ul className="max-w-4xl">
+        <ul>
           {list.map((o) => (
             <OpportunityRow key={o.id} o={o} />
           ))}

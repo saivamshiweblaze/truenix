@@ -8,7 +8,7 @@ export default function NotFound() {
       <Logo />
       <main id="main" className="mx-auto flex max-w-md flex-1 flex-col items-start justify-center gap-4">
         <PathArt size={64} />
-        <h1 className="text-title font-semibold">This page does not exist</h1>
+        <h1 className="text-title font-bold">This page does not exist</h1>
         <p className="text-body text-sub">The link may be wrong, or the page may have moved.</p>
         <ButtonLink href="/home">Go to your home page</ButtonLink>
       </main>

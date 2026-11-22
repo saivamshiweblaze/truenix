@@ -115,9 +115,9 @@ export function IdeaForm({ existing }: { existing?: Idea }) {
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mx-auto flex max-w-xl flex-col items-start gap-5 py-10">
         <BulbArt size={64} />
-        <h1 className="text-title font-semibold">{isEdit ? "Idea updated" : "Your idea is submitted"}</h1>
+        <h1 className="text-title font-bold">{isEdit ? "Idea updated" : "Your idea is submitted"}</h1>
         <p className="text-body text-sub">
-          {VISIBILITY.find((v) => v.id === draft.visibility)?.explanation} Submissions are stored in this browser during the demonstration.
+          {VISIBILITY.find((v) => v.id === draft.visibility)?.explanation} Your idea is saved in this browser.
         </p>
         <div className="flex flex-wrap gap-2">
           <ButtonLink href={`/ideas/${id}`} variant="primary">
@@ -146,7 +146,7 @@ export function IdeaForm({ existing }: { existing?: Idea }) {
                 aria-current={i === step ? "step" : undefined}
                 className={cn("flex items-center gap-2.5 py-1.5 text-ui transition-colors", i === step ? "font-medium text-ink" : "text-sub hover:text-ink")}
               >
-                <span className={cn("flex h-5 w-5 items-center justify-center rounded-full border text-micro tabular-nums", i < step ? "border-ink bg-ink text-white" : i === step ? "border-accent text-accent-ink" : "border-line-strong text-mute")}>
+                <span className={cn("flex h-5 w-5 items-center justify-center rounded-full border text-micro tabular-nums", i < step ? "border-ink bg-ink text-white" : i === step ? "border-accent bg-paper text-accent-text ring-2 ring-accent-wash" : "border-line-strong text-mute")}>
                   {i < step ? <Check size={11} strokeWidth={3} aria-hidden /> : i + 1}
                 </span>
                 {s.label}
@@ -200,8 +200,8 @@ export function IdeaForm({ existing }: { existing?: Idea }) {
                     <RadioCard key={v.id} name="visibility" value={v.id} checked={draft.visibility === v.id} onChange={(val) => set("visibility", val as IdeaDraft["visibility"])} title={v.label} description={v.explanation} />
                   ))}
                 </fieldset>
-                <div className="flex gap-3 border-l-2 border-accent bg-accent-wash/60 px-4 py-3.5">
-                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-accent-ink" aria-hidden />
+                <div className="flex gap-3 border-l-2 border-caution bg-surface px-4 py-3.5">
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-caution" aria-hidden />
                   <div className="text-meta text-charcoal">
                     <p className="font-medium text-ink">Before you share, think about intellectual property</p>
                     <p className="mt-1">
@@ -215,7 +215,7 @@ export function IdeaForm({ existing }: { existing?: Idea }) {
                     I confirm this idea is my own or my team&apos;s work, or that I have permission to share it, and I understand the note above.
                   </label>
                   {errors.ownership && (
-                    <p role="alert" className="text-meta text-accent-ink">
+                    <p role="alert" className="text-meta text-danger">
                       {errors.ownership}
                     </p>
                   )}
