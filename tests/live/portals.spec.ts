@@ -147,6 +147,28 @@ test("the founder's public summary is visible while its confidential venture row
   await signOutViaMenu(page, false);
 });
 
+test("admin server actions work: audited reveal of a demo research report", async ({ page }) => {
+  // Exercises adminReveal → requireAdmin → service-role client on the server. Fails when SUPABASE_SERVICE_ROLE_KEY is
+  // missing from the deployment. Writes one "Viewed research report" audit entry per run (that is the feature).
+  const results: string[] = [];
+  page.on("response", async (r) => {
+    if (r.request().method() === "POST" && r.request().headers()["next-action"]) {
+      const m = (await r.text().catch(() => "")).match(/"ok":false,"error":"([^"]{0,200})"/);
+      if (m) results.push(m[1]);
+    }
+  });
+  await signIn(page, "admin");
+  await expect(page).toHaveURL(/\/admin$/, { timeout: 20_000 });
+  await page.goto("/admin/research/0e7086a0-0000-4000-8000-000000000301");
+  await page.getByRole("button", { name: "Open with a reason" }).click({ timeout: 30_000 });
+  await page.getByLabel("Why do you need to see it?").fill("Automated production check of the audited admin reveal (demo record).");
+  await page.getByRole("button", { name: "Open", exact: true }).click();
+  await expect.poll(() => results, { timeout: 15_000 }).toEqual([]);
+  await expect(page.getByText(/Demo research plan generated/).first()).toBeVisible({ timeout: 20_000 });
+  expect(results, "admin server action errors").toEqual([]);
+  await signOutViaMenu(page, true);
+});
+
 test("no server secret reaches the browser", async ({ page }) => {
   const bodies: string[] = [];
   page.on("response", async (r) => {
