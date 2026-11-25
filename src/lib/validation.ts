@@ -1,11 +1,15 @@
 import { z } from "zod";
 
 export const emailSchema = z.string().trim().min(1, "Enter your email address.").email("Enter a valid email address, like name@example.com.");
+/** Mirrors the Supabase Auth password policy (min 10, lower + upper case letters and a digit). */
 export const passwordSchema = z
   .string()
-  .min(8, "Use at least 8 characters.")
-  .regex(/[A-Za-z]/, "Include at least one letter.")
+  .min(10, "Use at least 10 characters.")
+  .max(72, "Keep your password under 72 characters.")
+  .regex(/[a-z]/, "Include a lowercase letter.")
+  .regex(/[A-Z]/, "Include an uppercase letter.")
   .regex(/[0-9]/, "Include at least one number.");
+export const PASSWORD_HINT = "At least 10 characters, with upper and lower case letters and a number.";
 
 export const nameSchema = z
   .string()
@@ -119,6 +123,11 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Enter your password."),
 });
+
+export const changePasswordSchema = z
+  .object({ current: z.string().min(1, "Enter your current password."), password: passwordSchema, confirm: z.string() })
+  .refine((v) => v.password === v.confirm, { message: "Passwords do not match.", path: ["confirm"] })
+  .refine((v) => v.password !== v.current, { message: "Choose a password you haven’t used here.", path: ["password"] });
 
 export const resetSchema = z
   .object({ password: passwordSchema, confirm: z.string() })

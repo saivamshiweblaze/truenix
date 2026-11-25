@@ -135,7 +135,7 @@ export function MeAvatar({ size, className }: { size: number; className?: string
   const s = useAppState();
   const photo = useTransientFile("photo");
   if (!s.user) return null;
-  return <Avatar name={s.user.name} size={size} me src={photo?.url} className={className} />;
+  return <Avatar name={s.user.name} size={size} me src={photo?.url ?? s.user.avatarUrl} className={className} />;
 }
 
 function UserMenu({ compact }: { compact?: boolean }) {
@@ -169,9 +169,8 @@ function UserMenu({ compact }: { compact?: boolean }) {
             icon={<LogOut size={15} />}
             onSelect={() => {
               close();
-              signOut();
               clearTransientFiles();
-              router.push("/login");
+              void signOut().then(() => router.push("/login"));
             }}
           >
             Sign out
@@ -345,9 +344,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <button
                     type="button"
                     onClick={() => {
-                      signOut();
                       clearTransientFiles();
-                      router.push("/login");
+                      void signOut().then(() => router.push("/login"));
                     }}
                     className="flex h-10 items-center gap-3 rounded-sm px-3 text-ui text-charcoal hover:bg-surface hover:text-ink"
                   >

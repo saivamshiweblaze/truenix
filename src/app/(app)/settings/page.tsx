@@ -1,27 +1,25 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { SelectField, Switch, TextField } from "@/components/ui/field";
-import { Dialog } from "@/components/ui/overlay";
 import { PageHeader, SectionHeading } from "@/components/ui/primitives";
 import { Tabs } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { SELF_SERVE_ROLES } from "@/config/taxonomy";
 import { PreferencesEditor } from "@/features/preferences/preferences-editor";
 import { updateNotificationPrefs, updatePrivacy, updateUser } from "@/lib/store/actions";
-import { clearTransientFiles } from "@/lib/store/transient-files";
-import { getState, resetStore, useAppState } from "@/lib/store/store";
+import { DeleteAccount, EmailChange, PasswordChange, SignOutEverywhere } from "@/features/auth/account-security";
+import { getState, useAppState } from "@/lib/store/store";
 import type { RoleId } from "@/lib/types";
-import { emailSchema } from "@/lib/validation";
+
 
 type Tab = "account" | "preferences" | "privacy" | "notifications" | "data";
 const TABS: Tab[] = ["account", "preferences", "privacy", "notifications", "data"];
 
 export default function SettingsPage() {
   const s = useAppState();
-  const router = useRouter();
   const user = s.user!;
   const params = useSearchParams();
   const requested = params.get("tab") as Tab | null;
@@ -32,24 +30,39 @@ export default function SettingsPage() {
     window.history.replaceState(null, "", t === "account" ? "/settings" : `/settings?tab=${t}`);
   };
   const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [resetOpen, setResetOpen] = useState(false);
 
   const saveAccount = (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
     if (name.trim().length < 2) errs.name = "Enter your name.";
-    const em = emailSchema.safeParse(email);
-    if (!em.success) errs.email = em.error.issues[0].message;
     setErrors(errs);
     if (Object.keys(errs).length) return;
-    updateUser({ name: name.trim(), email: email.trim().toLowerCase() });
+    updateUser({ name: name.trim() });
     toast("Account details saved");
   };
 
+  /** Your own records as loaded under your session (other members' content is not included). */
   const exportData = () => {
-    const blob = new Blob([JSON.stringify(getState(), null, 2)], { type: "application/json" });
+    const st = getState();
+    const mine = {
+      exportedAt: new Date().toISOString(),
+      account: st.user,
+      ideas: st.ideas,
+      posts: st.posts,
+      comments: st.comments,
+      research: st.research,
+      validations: st.validations,
+      saved: st.saved,
+      following: st.following,
+      tasks: st.tasks,
+      applications: st.applications,
+      notifications: st.notifications,
+      messages: st.messages.filter((m) => m.authorId === "me"),
+      privacy: st.privacy,
+      notificationPrefs: st.notificationPrefs,
+    };
+    const blob = new Blob([JSON.stringify(mine, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -61,7 +74,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" description="Your account, interests and preferences, privacy and notifications. Settings are saved in this browser." />
+      <PageHeader title="Settings" description="Your account, interests and preferences, privacy and notifications. Changes are saved to your TRUEVIX account." />
       <Tabs
         label="Settings sections"
         value={tab}
@@ -80,11 +93,13 @@ export default function SettingsPage() {
             <form onSubmit={saveAccount} noValidate className="flex flex-col gap-4">
               <SectionHeading title="Account details" />
               <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} error={errors.name} maxLength={80} />
-              <TextField label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} error={errors.email} hint="Email delivery isn’t connected yet, so no confirmation is sent when you change it." />
               <div>
-                <Button type="submit">Save account details</Button>
+                <Button type="submit">Save name</Button>
               </div>
             </form>
+            <EmailChange current={user.email} />
+            <PasswordChange />
+            <SignOutEverywhere />
             <section className="flex flex-col gap-4">
               <SectionHeading title="How you use the platform" />
               <SelectField
@@ -145,7 +160,7 @@ export default function SettingsPage() {
               <Switch label="Show my organisation" description="Display your institution or company on your profile." checked={s.privacy.showOrganisation} onChange={(v) => updatePrivacy({ showOrganisation: v })} />
               <Switch label="Show my activity" description="Let others see ideas you follow and discussions you join." checked={s.privacy.showActivity} onChange={(v) => updatePrivacy({ showActivity: v })} />
             </div>
-            <p className="text-meta text-mute">These preferences are saved now and will be enforced once accounts move to secure servers.</p>
+            <p className="text-meta text-mute">Profile and message settings are enforced by the database. “Show my activity” is saved but not yet used anywhere.</p>
           </div>
         )}
 
@@ -164,43 +179,18 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-8">
             <section>
               <SectionHeading title="Where your data lives" />
-              <p className="text-ui text-sub">Your account, profile, ideas, research and messages are stored in this browser&apos;s local storage — nothing is sent to a server yet. Attached files (resume, photo) are never stored; they are held in the open tab only. Clearing site data removes everything.</p>
+              <p className="text-ui text-sub">Your account, profile, ideas, research, validation work and messages are stored in the TRUEVIX database. Ideas stay private unless you share them. Nothing is kept in this browser after you sign out.</p>
             </section>
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" onClick={exportData}>
                 Export my data (JSON)
               </Button>
-              <Button variant="secondary" onClick={() => setResetOpen(true)}>
-                Delete all my data
-              </Button>
+              <DeleteAccount />
             </div>
           </div>
         )}
       </div>
 
-      <Dialog
-        open={resetOpen}
-        size="sm"
-        onClose={() => setResetOpen(false)}
-        title="Delete all your data?"
-        description="This removes your account, profile, ideas, research and settings from this browser. It cannot be undone."
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setResetOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                resetStore();
-                clearTransientFiles();
-                router.push("/");
-              }}
-            >
-              Delete everything
-            </Button>
-          </>
-        }
-      />
     </>
   );
 }

@@ -52,7 +52,7 @@ export function useStatusDialog() {
     confirm.ask({
       title: `${meta.label}: ${label}?`,
       consequences: [
-        status === "rejected" ? "The applicant’s status changes to Rejected. Nothing is sent to them automatically in this phase." : status === "info_requested" ? "The applicant is marked as needing to provide more information. Contact them through the listed channel; no email is sent." : `The status changes to ${meta.label.toLowerCase()}.`,
+        status === "rejected" ? "The applicant’s status changes to Rejected. They see the new status and an in-app notification; no email is sent." : status === "info_requested" ? "The applicant is marked as needing to provide more information. Contact them through the listed channel; no email is sent." : `The status changes to ${meta.label.toLowerCase()}.`,
         "The change is added to the application’s history and the audit log.",
       ],
       confirmLabel: meta.label,

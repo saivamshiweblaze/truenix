@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toast";
 import { ORG_KIND_LABEL } from "@/config/taxonomy";
 import { useAppState } from "@/lib/store/store";
-import { adminSaveInstitution, adminSetInstitutionStatus, adminUpdateMember } from "@/lib/store/admin-actions";
+import { adminDecideInstitutionRequest, adminSaveInstitution, adminSetInstitutionStatus, adminUpdateMember } from "@/lib/store/admin-actions";
 import { memberRows } from "@/lib/admin/members";
 import type { FileMeta, Institution, OrgKind } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
@@ -57,6 +57,28 @@ export function InstitutionsList() {
   const count = (i: Institution) => members.filter((m) => m.account.institutionId === i.id).length;
   const rows = s.platform.institutions;
   const requests = rows.filter((i) => i.status === "pending");
+  const accessRequests = (s.platform.institutionRequests ?? []).filter((r) => r.status === "pending");
+  const confirm = useConfirm();
+  const decide = (r: (typeof accessRequests)[number], decision: "approved" | "rejected", grantAdmin: boolean) =>
+    confirm.ask({
+      title: decision === "rejected" ? "Reject this request?" : grantAdmin ? "Approve with administrator access?" : "Approve as representative?",
+      consequences: [
+        decision === "rejected"
+          ? "The member is notified. Nothing else changes."
+          : grantAdmin
+            ? "The member becomes an institution administrator: they can manage members and programmes and see ideas shared with the institution."
+            : "The member becomes a verified representative. Administrator access can be granted later.",
+        r.institutionId ? "Linked to the existing organisation." : "A verified organisation record is created from the request.",
+        "Recorded in the audit log.",
+      ],
+      confirmLabel: decision === "rejected" ? "Reject" : "Approve",
+      danger: decision === "rejected",
+      reason: decision === "rejected" ? "required" : "optional",
+      onConfirm: (note) => {
+        adminDecideInstitutionRequest(r.id, decision, { grantAdmin, note });
+        toast(decision === "rejected" ? "Request rejected" : "Request approved");
+      },
+    });
   const columns: Column<Institution>[] = [
     { id: "name", header: "Organisation", primary: true, sort: (i) => i.name, csv: (i) => i.name, cell: (i) => <span className="min-w-[12rem]">{i.name}</span> },
     { id: "kind", header: "Type", sort: (i) => ORG_KIND_LABEL[i.kind], csv: (i) => ORG_KIND_LABEL[i.kind], cell: (i) => <span className="text-meta text-sub">{ORG_KIND_LABEL[i.kind]}</span> },
@@ -78,6 +100,40 @@ export function InstitutionsList() {
           )
         }
       />
+      {confirm.dialog}
+      {accessRequests.length > 0 && (
+        <Block title="Member requests" className="mb-8" description="Members who asked to register an institution or to represent one. Approving is the only way to grant institution administrator access.">
+          <ul>
+            {accessRequests.map((r) => (
+              <li key={r.id} className="flex flex-col gap-2 border-b border-line py-3 last:border-b-0 md:flex-row md:items-center">
+                <div className="min-w-0 flex-1">
+                  <p className="text-ui font-medium">{r.proposedName ?? s.platform.institutions.find((i) => i.id === r.institutionId)?.name ?? "Institution"}</p>
+                  <p className="text-meta text-sub">
+                    {r.requestType === "administrator_access" ? "Administrator access" : r.requestType === "representative_access" ? "Representative access" : "New institution"} · {s.platform.people.find((p) => p.id === r.requesterId)?.name ?? "Member"}
+                    {r.position ? `, ${r.position}` : ""} · {formatDate(r.createdAt)}
+                  </p>
+                  {r.note && <p className="mt-0.5 text-meta text-charcoal">“{r.note}”</p>}
+                </div>
+                {can("institutions", "approve") && (
+                  <div className="flex flex-wrap gap-2">
+                    {r.requestType !== "administrator_access" && (
+                      <Button size="sm" variant="secondary" onClick={() => decide(r, "approved", false)}>
+                        Approve as representative
+                      </Button>
+                    )}
+                    <Button size="sm" onClick={() => decide(r, "approved", true)}>
+                      Approve with admin access
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => decide(r, "rejected", false)}>
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Block>
+      )}
       {requests.length > 0 && (
         <Block title="Registration requests" className="mb-8" description="Organisations that asked for an institution account.">
           <ul>

@@ -53,6 +53,11 @@ export const NEXT_STEPS: Record<RoleId, Step[]> = {
     { title: "Explore the problems being studied", body: "Understand what founders are trying to solve.", href: "/discover" },
     { title: "Set your availability", body: "Tell founders when and how you can help.", href: "/profile" },
   ],
+  institution_rep: [
+    { title: "Check your institution request", body: "The platform team verifies institutions before granting administrator access.", href: "/institution" },
+    { title: "Explore public ideas", body: "Ideas founders have chosen to publish.", href: "/ideas" },
+    { title: "Programmes and challenges", body: "Opportunities you can share with students.", href: "/opportunities" },
+  ],
   institution_admin: [
     { title: "Open the institution dashboard", body: "Student participation, ideas and pipeline.", href: "/institution" },
     { title: "Review student ideas", body: "Ideas submitted by your students.", href: "/ideas" },

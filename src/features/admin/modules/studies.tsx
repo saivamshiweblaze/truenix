@@ -208,7 +208,7 @@ export function StudyDetail({ id }: { id: string }) {
               <p className="text-ui text-charcoal">{st.consentText}</p>
             </Block>
           </div>
-          <Block title="Participants" description="Contact details stay private. Founders see only participants who consented and were selected (in Phase 2).">
+          <Block title="Participants" description="Contact details stay private. Study owners see only their own participants; consent is recorded by participants themselves.">
             <DataTable label="Participants" module="studies" rows={parts} columns={columns} getId={(p) => p.id} search={(p) => [name(p)]} searchPlaceholder="Search participants" exportName={`truevix-study-${st.id}`} emptyBody="Participants appear when they volunteer from Research studies." />
           </Block>
           <Block title="History">

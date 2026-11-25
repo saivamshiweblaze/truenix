@@ -54,6 +54,11 @@ const subscribe = (l: () => void) => {
   return () => listeners.delete(l);
 };
 
+/** Current file in a slot (for uploading it to storage). */
+export function getTransientFile(slot: TransientSlot): File | undefined {
+  return files[slot]?.file;
+}
+
 export function useTransientFile(slot: TransientSlot): Entry | undefined {
   return useSyncExternalStore(
     subscribe,

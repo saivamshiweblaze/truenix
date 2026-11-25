@@ -78,7 +78,7 @@ export function AnalyticsPage() {
     <>
       <AdminHeader
         title="Analytics"
-        description="Measured figures calculated from the records in this browser. Anything TRUEVIX does not record yet (page views, opportunity views, active users) is marked as not measured rather than estimated."
+        description="Measured figures calculated from the records your role can view in the TRUEVIX database. Anything TRUEVIX does not record yet (page views, opportunity views, active users) is marked as not measured rather than estimated."
         actions={<Segmented label="Date range" value={range} onChange={setRange} items={RANGES} />}
       />
       <MetricStrip cols={6}>
@@ -86,7 +86,7 @@ export function AnalyticsPage() {
         <Metric label="Onboarding completion" value={`${Math.round((members.filter((x) => x.account.onboarding.completed).length / Math.max(1, members.length)) * 100)}%`} note="Of members registered in range" />
         <Metric label="Ideas submitted" value={ideas.length} note="Measured" />
         <Metric label="Applications" value={regs.length} note="Measured" />
-        <Metric label="Opportunity views" value="—" note="Not measured in this phase" />
+        <Metric label="Opportunity views" value="—" note="Not measured yet" />
         <Metric label="Active members" value="—" note="Not measured: no server sessions" />
       </MetricStrip>
 

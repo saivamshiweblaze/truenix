@@ -2,17 +2,20 @@ import type { AdminModuleId, AdminPermission } from "@/lib/types";
 import type { AppState } from "@/lib/store/state";
 
 /**
- * Admin permission checks.
+ * Admin permission checks for the interface.
  *
- * IMPORTANT: in Phase 1 these run in the browser on browser-local data. They decide what the
- * interface offers; they are NOT a security boundary — anyone can edit localStorage. Phase 2
- * must enforce the same matrix on the server for every read and write (and filter private
- * fields server-side), with these checks kept only to shape the UI.
+ * Phase 2: the permission set comes from the database (public.my_session_context()), and every administrative
+ * read and write is enforced again on the server (RLS policies and the guarded admin operations). These checks
+ * only decide what the interface offers. A "role preview" can narrow the interface to another operator role's
+ * permissions; it can never widen it beyond what the server granted.
  */
 export function can(s: AppState, module: AdminModuleId, perm: AdminPermission): boolean {
-  if (s.user?.role !== "platform_admin") return false;
-  const role = s.platform.myAdminRole;
-  return !!s.platform.rolePermissions[role]?.[module]?.includes(perm);
+  if (s.user?.role !== "platform_admin" || !s.session?.adminRole) return false;
+  const granted = s.session.adminPermissions.some((p) => p.module === module && p.permission === perm);
+  if (!granted) return false;
+  const preview = s.platform.myAdminRole;
+  if (preview && preview !== s.session.adminRole) return !!s.platform.rolePermissions[preview]?.[module]?.includes(perm);
+  return true;
 }
 
 /** Message shown on a control the current administrator role cannot use. */

@@ -1,5 +1,4 @@
 import type { Announcement, Comment, ContentModeration, Idea, MemberAccount, Notification, Opportunity, Person, Post, Thread } from "@/lib/types";
-import { SEED_MESSAGES, SEED_NOTIFICATIONS, SEED_THREADS } from "@/lib/demo-data/feed";
 import type { AppState } from "./state";
 
 /**
@@ -25,6 +24,7 @@ export function meAsPerson(s: AppState): Person | null {
     collaboration: u.collaboration,
     bio: u.bio,
     demo: false,
+    avatarUrl: u.avatarUrl,
   };
 }
 
@@ -48,6 +48,8 @@ const hiddenContent = (m: ContentModeration | undefined) => m?.status === "remov
 
 /** Whether an idea may be shown to members other than its owner. */
 export function isIdeaListed(i: Idea) {
+  // Administrators' metadata index is never shown in member-facing pages.
+  if (i.access === "admin_index") return false;
   if (i.publication === "unpublished" || i.publication === "archived") return false;
   if (i.review && i.review.status !== "approved") return false;
   return true;
@@ -131,35 +133,9 @@ export function isAnnouncementLive(a: Announcement) {
   return a.status === "published" || (a.status === "scheduled" && !!a.scheduledFor && new Date(a.scheduledFor).getTime() <= Date.now());
 }
 
+/** Notifications stored for this member (comments, follows, reviews, announcements…), newest first. */
 export function allNotifications(s: AppState): (Notification & { read: boolean })[] {
-  const generated: Notification[] = [];
-  s.comments
-    .filter((c) => c.authorId === "me")
-    .slice(-3)
-    .forEach((c) =>
-      generated.push({
-        id: `gen-${c.id}`,
-        kind: "comment",
-        title: "Your comment was posted",
-        body: c.body.slice(0, 80),
-        href: c.targetId.startsWith("i-") || c.targetId.startsWith("idea-") ? `/ideas/${c.targetId}` : "/discover",
-        createdAt: c.createdAt,
-        demo: false,
-      }),
-    );
-  s.ideas
-    .filter((i) => i.status === "submitted")
-    .forEach((i) =>
-      generated.push({ id: `gen-sub-${i.id}`, kind: "system", title: "Idea submitted", body: i.title, href: `/ideas/${i.id}`, createdAt: i.createdAt, demo: false }),
-    );
-  // Platform announcements delivered in-app to the member's role.
-  const role = s.user?.role;
-  s.platform.announcements
-    .filter((a) => isAnnouncementLive(a) && a.channels.includes("in_app") && (a.audience.length === 0 || (role && a.audience.includes(role))))
-    .forEach((a) => generated.push({ id: `ann-${a.id}`, kind: "system", title: a.title, body: a.body.slice(0, 140), href: "/notifications", createdAt: a.publishedAt ?? a.scheduledFor ?? a.createdAt, demo: false }));
-  return [...generated, ...s.notifications, ...SEED_NOTIFICATIONS]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((n) => ({ ...n, read: s.readNotifications.includes(n.id) }));
+  return [...s.notifications].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).map((n) => ({ ...n, read: s.readNotifications.includes(n.id) }));
 }
 
 export function unreadCount(s: AppState) {
@@ -167,11 +143,11 @@ export function unreadCount(s: AppState) {
 }
 
 export function allThreads(s: AppState): Thread[] {
-  return [...s.threads, ...SEED_THREADS];
+  return s.threads;
 }
 
 export function messagesFor(s: AppState, threadId: string) {
-  return [...SEED_MESSAGES, ...s.messages].filter((m) => m.threadId === threadId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  return s.messages.filter((m) => m.threadId === threadId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 /** Members listed to other members (active accounts with completed onboarding). */

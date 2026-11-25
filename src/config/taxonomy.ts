@@ -48,7 +48,8 @@ export const ROLES: RoleDef[] = [
   { id: "expert", label: "Domain expert", short: "Expert", description: "You review ideas and share knowledge from your field." },
   { id: "mentor", label: "Mentor", short: "Mentor", description: "You guide founders and students through their early decisions." },
   { id: "participant", label: "Research participant", short: "Participant", description: "You take part in interviews and studies that help founders learn." },
-  { id: "institution_admin", label: "Institution administrator", short: "Institution", description: "You run innovation programmes for a university or institution." },
+  { id: "institution_rep", label: "Institution representative", short: "Institution", description: "You represent a university, incubator or organisation. Administrator access is granted after verification." },
+  { id: "institution_admin", label: "Institution administrator", short: "Institution admin", description: "You run innovation programmes for a verified institution. Granted by the platform team." },
   { id: "platform_admin", label: "Platform administrator", short: "Platform admin", description: "You operate and moderate the platform." },
 ];
 
@@ -69,9 +70,11 @@ export const STAGES: { id: IdeaStage; label: string; hint: string }[] = [
 export const stageLabel = (id: IdeaStage) => STAGES.find((s) => s.id === id)?.label ?? id;
 
 export const VISIBILITY: { id: Visibility; label: string; explanation: string }[] = [
-  { id: "private", label: "Private", explanation: "Only you and team members you add can see this idea. It is not listed anywhere." },
-  { id: "reviewers", label: "Selected reviewers", explanation: "Only you, your team, and reviewers you invite can read the full idea." },
-  { id: "public_summary", label: "Public summary", explanation: "The title, summary, industry and stage are listed publicly. Problem and solution details stay visible to signed-in members." },
+  { id: "private", label: "Private", explanation: "Only you and team members you add can see this idea. It is not listed anywhere, and any access you shared is paused." },
+  { id: "collaborators", label: "Selected collaborators", explanation: "You, your team and the people you share it with. Not listed anywhere." },
+  { id: "reviewers", label: "Selected reviewers", explanation: "You, your team, and reviewers you invite. A reviewer’s access ends when their review is complete." },
+  { id: "institution", label: "My institution", explanation: "Also visible to verified members of the institution you choose. Not listed publicly." },
+  { id: "public_summary", label: "Public summary", explanation: "A summary (title, summary, industry and stage) is listed publicly after review. Problem and solution are shown to signed-in members only; documents, research and validation stay private." },
 ];
 
 export const EXPERIENCE: { id: ExperienceLevel; label: string }[] = [

@@ -250,7 +250,7 @@ function AdminProfileMenu() {
                   active={r.id === s.platform.myAdminRole}
                   onSelect={() => {
                     adminPreviewRole(r.id);
-                    toast(`Previewing as ${r.label}`, { body: "Changes what the interface offers. Real enforcement needs the Phase 2 server." });
+                    toast(`Previewing as ${r.label}`, { body: "Narrows what the interface offers. The server still applies your own role’s permissions." });
                     close();
                   }}
                 >
@@ -267,8 +267,7 @@ function AdminProfileMenu() {
             icon={<LogOut size={15} />}
             onSelect={() => {
               close();
-              signOut();
-              router.push("/login");
+              void signOut().then(() => router.push("/login"));
             }}
           >
             Sign out
@@ -331,7 +330,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 {!collapsed && (
                   <p className="flex gap-1.5 px-1 text-micro leading-snug text-mute">
                     <ShieldCheck size={13} className="mt-px shrink-0" aria-hidden />
-                    Data lives in this browser. Permissions are interface rules until server enforcement (Phase 2).
+                    Every action is checked on the server against your role and recorded in the audit log.
                   </p>
                 )}
                 <button type="button" onClick={() => setCollapsed(!collapsed)} className="flex h-8 items-center justify-center gap-2 rounded-sm text-meta text-sub hover:bg-surface hover:text-ink" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>

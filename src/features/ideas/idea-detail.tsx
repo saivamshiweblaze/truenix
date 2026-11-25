@@ -20,6 +20,7 @@ import type { IdeaStage } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { CommentThread } from "@/features/shared/comments";
 import { SaveIdeaButton } from "@/features/shared/rows";
+import { AccessPanel } from "./access-panel";
 
 const STAGE_TO_JOURNEY: Record<IdeaStage, number> = { concept: 1, research: 2, validation: 4, prototype: 5, pilot: 5, launched: 6 };
 
@@ -31,7 +32,7 @@ export function IdeaDetail() {
   const router = useRouter();
   const s = useAppState();
   const idea = ideaById(s, id);
-  const [tab, setTab] = useState<"overview" | "updates" | "discussion" | "team">("overview");
+  const [tab, setTab] = useState<"overview" | "updates" | "discussion" | "team" | "access">("overview");
   const [interestOpen, setInterestOpen] = useState(false);
   const [note, setNote] = useState("");
   const [updateOpen, setUpdateOpen] = useState(false);
@@ -137,6 +138,7 @@ export function IdeaDetail() {
               { value: "updates", label: "Updates", count: idea.updates.length },
               { value: "discussion", label: "Discussion", count: commentCount(s, idea.id) },
               { value: "team", label: "Team", count: idea.team.length },
+              ...(mine ? [{ value: "access" as const, label: "Access and documents" }] : []),
             ]}
           />
           <div className="pt-6">
@@ -169,6 +171,7 @@ export function IdeaDetail() {
                 <CommentThread targetId={idea.id} placeholder="Ask a question or share a relevant experience" />
               </div>
             )}
+            {tab === "access" && mine && <AccessPanel idea={idea} />}
             {tab === "team" && (
               <ul className="flex max-w-xl flex-col">
                 {idea.team.map((m) => {
@@ -293,7 +296,7 @@ export function IdeaDetail() {
         size="sm"
         onClose={() => setDeleteOpen(false)}
         title="Delete this draft?"
-        description="This removes the draft from this browser. It cannot be undone."
+        description="This permanently deletes the idea and its validation and documents. It cannot be undone."
         footer={
           <>
             <Button variant="ghost" onClick={() => setDeleteOpen(false)}>

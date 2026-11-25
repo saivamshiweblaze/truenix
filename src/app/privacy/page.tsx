@@ -9,31 +9,35 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       updated="November 2026"
-      intro={<>This policy describes what happens to your information in the current release of {brand.productName}. It will be replaced by a full policy before any information is stored on {brand.parentCompany} servers.</>}
+      intro={<>This policy describes how the {brand.productName} beta handles your information. A full policy will be published before public launch.</>}
       sections={[
         {
-          heading: "What we collect today",
+          heading: "What we store",
           body: (
             <p>
-              Nothing is transmitted to {brand.parentCompany}. The details you enter — name, email, phone number, profile and academic information, and the content you create — are saved in your browser’s local storage on this device.
+              Your account and the content you create — name, email, profile and academic details, ideas, research, validation notes, posts and messages — are stored in {brand.productName}’s database, hosted on Supabase. Passwords are handled by the account service and stored only as secure hashes; {brand.parentCompany} never sees them.
+            </p>
+          ),
+        },
+        {
+          heading: "Who can see it",
+          body: (
+            <p>
+              Ideas are private unless you choose otherwise. You decide whether an idea is shared with selected collaborators, invited reviewers, your institution, or listed as a public summary — and you can withdraw that access at any time. Access rules are enforced by the database for every request. Platform administrators can open confidential records only for a stated reason, and each access is recorded in an audit log.
             </p>
           ),
         },
         {
           heading: "Files you attach",
-          body: (
-            <p>
-              Resumes and profile photos are never written to local storage. They are held in memory for the open tab only, so you can review them during onboarding, and are discarded when the tab is reloaded or closed or you sign out. Only the file name, type and size are kept.
-            </p>
-          ),
+          body: <p>Profile photos are stored so other members can see them. Resumes and confidential documents are stored privately and are shown only to you and the people you allow, through short-lived links.</p>,
         },
         {
           heading: "Verification",
-          body: <p>Email and phone verification are not yet connected. Your email address and phone number are recorded as unverified until a verification service is enabled.</p>,
+          body: <p>Your email address is confirmed through a link sent when you register. Phone numbers are not verified: no text-message service is connected.</p>,
         },
         {
           heading: "Your control",
-          body: <p>You can delete everything stored by {brand.productName} in this browser from Settings → Data, or by clearing your browser’s site data.</p>,
+          body: <p>You can edit your profile and privacy settings, export your data from Settings → Your data, and ask us to delete your account.</p>,
         },
         {
           heading: "Contact",

@@ -505,14 +505,16 @@ export function resolvedRole(role: OnboardingRole, v: Values): RoleId {
     case "participant":
       return "participant";
     case "institution":
-      return "institution_admin";
+      // Self-service gives the representative persona only. Institution administrator access is granted by the
+      // platform team after an institution request is approved (see institution_requests).
+      return "institution_rep";
   }
 }
 
 export function onboardingRoleFor(role: RoleId): OnboardingRole {
   if (role === "student_idea" || role === "student_explorer") return "student";
   if (role === "expert" || role === "mentor") return "expert_mentor";
-  if (role === "institution_admin") return "institution";
+  if (role === "institution_admin" || role === "institution_rep") return "institution";
   if (role === "founder" || role === "professional" || role === "participant") return role;
   return "student";
 }

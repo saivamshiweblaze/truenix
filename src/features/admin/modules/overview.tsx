@@ -43,7 +43,7 @@ export function AdminOverview() {
     <>
       <AdminHeader
         title="Platform overview"
-        description="What needs attention across TRUEVIX. Figures are calculated from the records stored in this browser, not from live analytics."
+        description="What needs attention across TRUEVIX. Figures are calculated from the database records your role can view, not from web analytics."
         actions={
           <>
             <Segmented label="Date range" value={range} onChange={setRange} items={RANGES} />

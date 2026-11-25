@@ -1,6 +1,8 @@
-import { z } from "zod";
 import type {
   Activity,
+  AdminModuleId,
+  AdminPermission,
+  AdminRoleId,
   Application,
   AuditEntry,
   Comment,
@@ -14,7 +16,7 @@ import type {
   Thread,
   ValidationWorkspace,
 } from "@/lib/types";
-import { seedPlatform, type PlatformState } from "./platform";
+import { emptyPlatform, type PlatformState } from "./platform";
 
 export interface NotificationPrefs {
   comments: boolean;
@@ -32,10 +34,40 @@ export interface PrivacyPrefs {
   showActivity: boolean;
 }
 
+/** What the server says about the signed-in account (from public.my_session_context()). */
+export interface SessionInfo {
+  userId: string;
+  accountStatus: "active" | "restricted" | "suspended" | "deactivated";
+  accountStatusReason: string | null;
+  onboardingCompleted: boolean;
+  /** Privileged roles granted on the server (never self-assigned). */
+  roles: { role: "platform_admin" | "institution_admin"; institutionId: string | null }[];
+  adminRole: AdminRoleId | null;
+  adminPermissions: { module: AdminModuleId; permission: AdminPermission }[];
+  institutions: { institutionId: string; memberRole: string; status: string }[];
+}
+
+export interface PublicSettings {
+  openRegistration: boolean;
+  requireIdeaReview: boolean;
+  researchEnabled: boolean;
+  communityPosting: boolean;
+  opportunityRegistration: boolean;
+  studiesRecruiting: boolean;
+}
+
+export type DataStatus = "idle" | "loading" | "ready" | "error";
+
 export interface AppState {
   version: 1;
   signedIn: boolean;
   user: CurrentUser | null;
+  /** Supabase Auth user id of the signed-in member. Records owned by them are mapped to "me" in the store. */
+  authUserId: string | null;
+  session: SessionInfo | null;
+  dataStatus: DataStatus;
+  dataError: string | null;
+  loadedAt: string | null;
   /** Email awaiting the (simulated) reset-password step. */
   pendingResetEmail: string | null;
   ideas: Idea[];
@@ -46,6 +78,8 @@ export interface AppState {
   saved: { ideas: string[]; posts: string[]; opportunities: string[] };
   following: { ideas: string[]; people: string[] };
   connections: string[];
+  /** Connection state per person (pending requests vs accepted). */
+  connectionStates: Record<string, { status: "pending" | "accepted" | "declined"; incoming: boolean }>;
   liked: string[];
   readNotifications: string[];
   notifications: Notification[];
@@ -71,6 +105,11 @@ export const initialState = (): AppState => ({
   version: 1,
   signedIn: false,
   user: null,
+  authUserId: null,
+  session: null,
+  dataStatus: "idle",
+  dataError: null,
+  loadedAt: null,
   pendingResetEmail: null,
   ideas: [],
   posts: [],
@@ -80,6 +119,7 @@ export const initialState = (): AppState => ({
   saved: { ideas: [], posts: [], opportunities: [] },
   following: { ideas: [], people: [] },
   connections: [],
+  connectionStates: {},
   liked: [],
   readNotifications: [],
   notifications: [],
@@ -87,10 +127,7 @@ export const initialState = (): AppState => ({
   messages: [],
   applications: [],
   decisions: {},
-  tasks: [
-    { id: "task-seed-1", text: "Read three industry problems on Discover", done: false, createdAt: "2026-11-01T00:00:00Z" },
-    { id: "task-seed-2", text: "Complete your profile headline", done: false, createdAt: "2026-11-01T00:00:00Z" },
-  ],
+  tasks: [],
   activity: [],
   notificationPrefs: { comments: true, follows: true, collaboration: true, opportunities: true, research: true, weeklyDigest: false },
   privacy: { profileVisibility: "members", showOrganisation: true, allowMessages: "everyone", showActivity: true },
@@ -98,37 +135,5 @@ export const initialState = (): AppState => ({
     audit: [],
     settings: { openRegistration: true, requireIdeaReview: true, researchEnabled: true },
   },
-  platform: seedPlatform(),
+  platform: emptyPlatform(),
 });
-
-/**
- * Shape check for data loaded from localStorage. Local storage is user-controlled,
- * so anything that does not match is discarded rather than trusted.
- */
-const arr = z.array(z.unknown());
-export const persistedSchema = z
-  .object({
-    version: z.literal(1),
-    signedIn: z.boolean(),
-    user: z
-      .object({
-        id: z.literal("me"),
-        name: z.string().max(120),
-        email: z.string().max(200),
-        role: z.enum(["student_idea", "student_explorer", "founder", "professional", "expert", "mentor", "participant", "institution_admin", "platform_admin"]),
-        onboarded: z.boolean(),
-      })
-      .passthrough()
-      .nullable(),
-    ideas: arr,
-    posts: arr,
-    comments: arr,
-    research: arr,
-    validations: z.record(z.string(), z.unknown()),
-    saved: z.object({ ideas: z.array(z.string()), posts: z.array(z.string()), opportunities: z.array(z.string()) }),
-    following: z.object({ ideas: z.array(z.string()), people: z.array(z.string()) }),
-    tasks: arr,
-    admin: z.object({ audit: arr }).passthrough(),
-    platform: z.object({ seedVersion: z.number(), people: arr, accounts: arr, opportunities: arr }).passthrough().optional(),
-  })
-  .passthrough();

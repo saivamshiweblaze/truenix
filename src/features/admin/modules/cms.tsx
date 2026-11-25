@@ -281,7 +281,7 @@ export function CmsEditor({ id }: { id: string }) {
                     if (dirty && !saveDraft()) return;
                     confirm.ask({
                       title: "Publish this content?",
-                      consequences: [`The ${WHERE[e.kind].label.toLowerCase()} shows it immediately for every visitor in this browser’s data set.`, "A new version is added to the history."],
+                      consequences: [`The ${WHERE[e.kind].label.toLowerCase()} shows it to every visitor.`, "A new version is added to the history."],
                       confirmLabel: "Publish",
                       onConfirm: () => (adminPublishCms(e.id), toast("Published", { body: "The public page now shows this version." })),
                     });

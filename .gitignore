@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -47,3 +48,8 @@ next-env.d.ts
 /playwright/.cache/
 # Playwright MCP browser session logs (local tooling output)
 /.playwright-mcp/
+
+# local secrets (beta credentials, service keys) — never commit
+/.secrets/
+supabase/.env
+supabase/.temp/

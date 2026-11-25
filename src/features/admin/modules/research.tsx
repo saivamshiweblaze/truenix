@@ -16,6 +16,7 @@ import { AdminStatus, Flag } from "../kit/status";
 import { DataTable, type Column } from "../kit/data-table";
 import { PermButton } from "../kit/can";
 import { useConfirm } from "../kit/confirm";
+import { RevealGate } from "../kit/reveal-gate";
 
 const catLabel = (c: string) => RESEARCH_CATEGORIES.find((x) => x.id === c)?.label ?? c;
 const DEPTH = { scan: "Quick scan", standard: "Standard", deep: "Deep" } as const;
@@ -39,7 +40,7 @@ export function ResearchList() {
     <>
       <AdminHeader
         title="AI Researcher"
-        description="Research runs requested by members. In this phase every run is a template-generated research plan created in the browser; no AI model or search provider is connected, so there is no provider usage or cost to report."
+        description="Research runs requested by members. No AI model or search provider is connected, so every run is a template-generated research plan and there is no provider usage or cost to report. Report content opens only with a recorded reason."
       />
       <MetricStrip cols={4}>
         <Metric label="Runs" value={rows.length} />
@@ -122,6 +123,7 @@ export function ResearchDetail({ id }: { id: string }) {
               <p className="text-ui text-danger">{r.failureReason}</p>
             </Block>
           )}
+          <RevealGate kind="research" recordId={r.id} ideaId={r.ideaId} locked={!!r.adminIndexOnly} what="research report">
           <Block title="Report sections" description="Template-generated plan. It contains questions and suggested sources, not findings.">
             {r.sections.length ? (
               <ul className="flex flex-col gap-4">
@@ -149,6 +151,7 @@ export function ResearchDetail({ id }: { id: string }) {
               <p className="text-meta text-sub">No sources recorded.</p>
             )}
           </Block>
+          </RevealGate>
         </div>
         <Block title="Run details">
           <Details
@@ -156,8 +159,9 @@ export function ResearchDetail({ id }: { id: string }) {
               { label: "Linked idea", value: idea ? <Link href={`/admin/ideas/${idea.id}`} className="underline underline-offset-4">{idea.title.split(":")[0]}</Link> : "None" },
               { label: "Focus areas", value: r.categories.map(catLabel).join(", "), wide: true },
               { label: "Depth", value: DEPTH[r.depth] },
-              { label: "Provenance", value: r.provenance === "demo" ? "Generated in the browser from templates" : "Live provider" },
-              { label: "Provider usage", value: "Not applicable — no AI provider is connected in this phase" },
+              { label: "Provenance", value: r.provenance === "demo" ? "Built-in template (no AI or search provider)" : "Live provider" },
+              ...(r.adminIndexOnly ? [{ label: "Content", value: `${r.findingCount ?? 0} sections, ${r.sourceCount ?? 0} sources (not opened)` }] : []),
+              { label: "Provider usage", value: "Not applicable — no AI provider is connected" },
             ]}
           />
         </Block>

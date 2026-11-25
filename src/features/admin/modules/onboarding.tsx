@@ -128,7 +128,7 @@ export function OnboardingPage() {
 
   return (
     <>
-      <AdminHeader title="Onboarding" description="Registrations and onboarding progress. Phone numbers, emails and resumes are not verified in this phase; the table says only what the member provided." />
+      <AdminHeader title="Onboarding" description="Registrations and onboarding progress. Email confirmation comes from the account service. Phone numbers and resumes are not verified; the table says only what the member provided." />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <MetricStrip cols={3}>
           <Metric label="Registrations" value={rows.length} />

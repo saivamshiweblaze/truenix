@@ -361,7 +361,7 @@ function HackathonPanel({ o }: { o: Opportunity }) {
               onClick={() =>
                 confirm.ask({
                   title: o.resultsPublished ? "Withdraw published results?" : "Publish results?",
-                  consequences: [o.resultsPublished ? "The listing returns to its date-based status." : "The listing is marked completed and winners are shown on it. No email is sent in this phase."],
+                  consequences: [o.resultsPublished ? "The listing returns to its date-based status." : "The listing is marked completed and winners are shown on it. Participants are notified in-app; no email is sent."],
                   confirmLabel: o.resultsPublished ? "Withdraw results" : "Publish results",
                   reason: "optional",
                   onConfirm: (reason) => {
@@ -376,7 +376,7 @@ function HackathonPanel({ o }: { o: Opportunity }) {
           )}
         </Block>
 
-        <Block title="Certificates" description="Certificate metadata only. No certificate files are generated or sent in this phase.">
+        <Block title="Certificates" description="Certificate records only. No certificate files are generated or emailed.">
           <AdminFileField
             kind="image"
             slot={`opp:${o.id}:certificate`}
@@ -403,7 +403,7 @@ function HackathonPanel({ o }: { o: Opportunity }) {
         </Block>
       </div>
 
-      <Block title="Participant communications" description="Messages are recorded here and shown to participants in-app. No email or SMS is sent in this phase.">
+      <Block title="Participant communications" description="Messages are recorded here and delivered to participants as in-app notifications. No email or SMS is sent.">
         {edit && (
           <div className="mb-4 grid gap-3 md:grid-cols-[1fr_12rem]">
             <TextField label="Subject" value={msg.subject} onChange={(e) => setMsg({ ...msg, subject: e.target.value })} maxLength={120} error={err.msg} />

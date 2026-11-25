@@ -88,7 +88,7 @@ export function IdeaForm({ existing }: { existing?: Idea }) {
     }
     const newId = saveIdea(draft, { id, submit: false });
     setId(newId);
-    toast(isEdit ? "Changes saved" : "Draft saved", { body: "Stored in this browser. Find it in My workspace." });
+    toast(isEdit ? "Changes saved" : "Draft saved", { body: "Saved to your account. Find it in My workspace." });
   };
 
   const requestSubmit = () => {

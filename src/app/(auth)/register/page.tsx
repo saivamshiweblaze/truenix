@@ -6,24 +6,28 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckboxField, TextField } from "@/components/ui/field";
 import { TextLink } from "@/components/ui/primitives";
-import { createAccount } from "@/lib/store/actions";
-import { fieldErrors, registerSchema } from "@/lib/validation";
+import { registerAction } from "@/features/auth/actions";
 import { ServiceNotice } from "@/features/auth/service-notice";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { fieldErrors, PASSWORD_HINT, registerSchema } from "@/lib/validation";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", terms: false });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
   const set = (k: "name" | "email" | "password" | "confirm") => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = registerSchema.safeParse(form);
     if (!parsed.success) return setErrors(fieldErrors(parsed.error));
     setErrors({});
-    // The password is validated for strength and then discarded. Nothing secret is persisted.
-    createAccount({ name: parsed.data.name, email: parsed.data.email });
-    router.push("/onboarding");
+    setBusy(true);
+    const res = await registerAction(form);
+    setBusy(false);
+    if (!res.ok) return setErrors({ ...(res.fields ?? {}), form: res.error });
+    router.push(res.next ?? "/verify-email");
   };
 
   return (
@@ -38,10 +42,10 @@ export default function RegisterPage() {
           </TextLink>
         </p>
       </div>
-      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+      <form onSubmit={submit} noValidate className="flex flex-col gap-4" aria-busy={busy}>
         <TextField label="Full name" autoComplete="name" value={form.name} onChange={set("name")} error={errors.name} maxLength={80} />
         <TextField label="Email" type="email" autoComplete="email" value={form.email} onChange={set("email")} error={errors.email} maxLength={160} />
-        <TextField label="Password" type="password" autoComplete="new-password" value={form.password} onChange={set("password")} error={errors.password} hint="At least 8 characters, with a letter and a number." />
+        <TextField label="Password" type="password" autoComplete="new-password" value={form.password} onChange={set("password")} error={errors.password} hint={PASSWORD_HINT} />
         <TextField label="Confirm password" type="password" autoComplete="new-password" value={form.confirm} onChange={set("confirm")} error={errors.confirm} />
         <CheckboxField
           checked={form.terms}
@@ -61,11 +65,16 @@ export default function RegisterPage() {
             </>
           }
         />
-        <Button type="submit" variant="accent" size="lg" className="mt-1">
-          Create account
+        {errors.form && (
+          <p role="alert" className="text-meta text-danger">
+            {errors.form}
+          </p>
+        )}
+        <Button type="submit" variant="accent" size="lg" className="mt-1" disabled={busy || !isSupabaseConfigured()}>
+          {busy ? "Creating account…" : "Create account"}
         </Button>
       </form>
-      <ServiceNotice>Your account is saved in this browser until secure sign-in is connected. Your password is checked for strength, then discarded — it isn’t stored.</ServiceNotice>
+      <ServiceNotice>You’ll confirm your email before signing in. Your password is handled by our account service and is never stored by TRUEVIX itself.</ServiceNotice>
     </div>
   );
 }

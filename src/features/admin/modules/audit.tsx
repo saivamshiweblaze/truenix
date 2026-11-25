@@ -40,7 +40,7 @@ export function AuditPage() {
     <>
       <AdminHeader
         title="Audit log"
-        description="Every administrative action, newest first. The log is append-only: there is no edit or delete. In this phase it is kept in the browser (latest 500 entries); in production it must be written server-side to append-only storage."
+        description="Every administrative action, newest first. The log is append-only: the database rejects edits and deletions. Entries are written by the server with each action; the latest 500 are shown."
       />
       <DataTable
         label="Audit entries"

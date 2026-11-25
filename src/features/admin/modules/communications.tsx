@@ -113,7 +113,7 @@ function Editor({ existing, onClose }: { existing?: Announcement; onClose: () =>
               </p>
             )}
           </fieldset>
-          <TextField label="Schedule for" type="datetime-local" value={f.when} onChange={(e) => setF({ ...f, when: e.target.value })} error={errors.when} optional hint="Used by Schedule. Scheduled announcements go live when someone next opens TRUEVIX after this time (no background job runs in this phase)." />
+          <TextField label="Schedule for" type="datetime-local" value={f.when} onChange={(e) => setF({ ...f, when: e.target.value })} error={errors.when} optional hint="Used by Schedule. Scheduled announcements are shown from this time. In-app notifications are created when you publish." />
         </div>
       )}
     </Dialog>
@@ -235,7 +235,7 @@ export function CommunicationsPage() {
     <>
       <AdminHeader
         title="Announcements and messaging"
-        description="Draft, preview, schedule and publish announcements. In this phase announcements are delivered in-app and as a site banner only; email and SMS are not connected."
+        description="Draft, preview, schedule and publish announcements. Announcements are delivered as in-app notifications and as a site banner. Email and SMS are not connected."
         actions={
           can("communications", "create") && (
             <Button size="sm" variant="accent" onClick={() => setEditing("new")}>
@@ -258,13 +258,13 @@ export function CommunicationsPage() {
       {tab === "announcements" && <DataTable key="a" label="Announcements" module="communications" rows={anns} columns={annCols} getId={(a) => a.id} search={(a) => [a.title, a.body]} filters={[{ id: "status", label: "Status", options: ["draft", "scheduled", "published", "archived"].map((v) => ({ value: v, label: v[0].toUpperCase() + v.slice(1) })), test: (a, v) => a.status === v }]} initialSort={{ id: "when", dir: "desc" }} exportName="truevix-announcements" />}
       {tab === "delivery" && (
         <>
-          <p className="mb-3 text-meta text-sub">Every delivery attempt, including channels that could not be used. “Not sent” means no provider is connected for that channel; nothing was attempted outside this browser.</p>
+          <p className="mb-3 text-meta text-sub">Every delivery attempt, including channels that could not be used. “Not sent” means no provider is connected for that channel, so nothing was attempted.</p>
           <DataTable key="d" label="Delivery records" module="communications" rows={deliveries} columns={delCols} getId={(d) => d.id} search={(d) => [d.title, d.detail]} filters={[{ id: "status", label: "Result", options: [{ value: "not_sent", label: "Not sent" }, { value: "delivered_in_app", label: "Delivered in-app" }, { value: "shown_as_banner", label: "Shown as banner" }], test: (d, v) => d.status === v }]} initialSort={{ id: "at", dir: "desc" }} exportName="truevix-deliveries" emptyBody="Deliveries are recorded when an announcement is published." />
         </>
       )}
       {tab === "conversations" && (
         <Block title="Private conversations" description="Metadata only. Message content stays closed unless opened under a documented support, safety or legal case, which is permanently logged.">
-          <p className="mb-3 text-micro text-mute">In this phase only the signed-in member’s own inbox exists in this browser, so the list shows those conversations.</p>
+          <p className="mb-3 text-micro text-mute">Only your own conversations are listed. Opening another member’s conversation requires a documented case and is audited.</p>
           <DataTable label="Conversations" module="communications" rows={threads} columns={threadCols} getId={(t) => t.id} search={(t) => [t.subject]} />
         </Block>
       )}

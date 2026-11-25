@@ -33,7 +33,7 @@ function AccountDialog({ existing, onClose }: { existing?: AdminAccount; onClose
     setErrors(e);
     if (Object.keys(e).length) return;
     adminSaveAdminAccount({ id: existing?.id, name: f.name, email: f.email, role: f.role, status: existing?.status ?? "active", lastActiveAt: existing?.lastActiveAt });
-    toast(existing ? "Administrator updated" : "Administrator account created", { body: existing ? undefined : "No invitation is emailed in this phase. Real accounts need the Phase 2 identity provider." });
+    toast(existing ? "Administrator updated" : "Administrator access requested", { body: existing ? undefined : "Granted to the registered account with that email. No invitation email is sent." });
     onClose();
   };
   return (
@@ -203,8 +203,8 @@ export function AccessPage() {
       <div role="note" className="mb-6 flex gap-3 rounded-md border border-line bg-surface p-4 text-ui text-charcoal">
         <ShieldAlert size={18} className="mt-0.5 shrink-0" aria-hidden />
         <p>
-          These permissions shape what the interface offers. They are <strong>not</strong> access control yet: data and checks run in this browser, and anyone with the browser can change them. Phase 2 must enforce this matrix on
-          the server for every request, issue admin sessions through an identity provider with multi-factor sign-in, and write audit entries server-side.
+          This matrix is stored in the database and enforced on the server: row-level security decides what each role can read, and every administrative change is re-checked and written to the audit log by the server.
+          Platform administrator access itself can only be granted here, to a registered account, by someone who can manage permissions. Multi-factor sign-in for administrators is not enabled yet.
         </p>
       </div>
       <Tabs

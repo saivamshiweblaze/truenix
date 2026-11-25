@@ -8,6 +8,7 @@ export type RoleId =
   | "expert"
   | "mentor"
   | "participant"
+  | "institution_rep"
   | "institution_admin"
   | "platform_admin";
 
@@ -30,7 +31,12 @@ export type IndustryId =
   | "water";
 
 export type IdeaStage = "concept" | "research" | "validation" | "prototype" | "pilot" | "launched";
-export type Visibility = "private" | "reviewers" | "public_summary";
+/**
+ * Who can see a venture. Members always can. Explicit disclosures (collaborators, invited reviewers,
+ * an institution) apply only while the venture is not private. Only public_summary creates a public listing,
+ * and that listing is a separate summary record — never the confidential venture itself.
+ */
+export type Visibility = "private" | "collaborators" | "reviewers" | "institution" | "public_summary";
 export type ExperienceLevel = "learning" | "early" | "mid" | "senior" | "leader";
 
 export interface Person {
@@ -47,6 +53,7 @@ export interface Person {
   bio: string;
   /** Seeded demonstration profile. */
   demo: boolean;
+  avatarUrl?: string;
 }
 
 /** Profile family chosen during onboarding; each has its own required fields. */
@@ -61,7 +68,11 @@ export interface FileMeta {
   size: number;
   type: string;
   addedAt: string;
-  storage: "session";
+  /** "session": held in memory for this tab only. "stored": uploaded to Supabase Storage. */
+  storage: "session" | "stored";
+  id?: string;
+  bucket?: string;
+  path?: string;
 }
 
 export type ProfileValue = string | string[];
@@ -91,11 +102,15 @@ export interface CurrentUser {
   /** Role-specific onboarding answers, keyed by field id (see features/onboarding/config.ts). */
   profile?: Record<string, ProfileValue>;
   documents?: { resume?: FileMeta; photo?: FileMeta };
+  /** Self-service persona chosen at onboarding (role may differ when a privileged role is granted). */
+  persona?: RoleId;
+  avatarUrl?: string;
 }
 
 export interface TeamMember {
   personId: string;
   role: string;
+  memberRole?: "owner" | "editor" | "collaborator";
 }
 
 export interface IdeaUpdate {
@@ -103,6 +118,7 @@ export interface IdeaUpdate {
   date: string;
   title: string;
   body: string;
+  isPublic?: boolean;
 }
 
 export interface Idea {
@@ -135,6 +151,13 @@ export interface Idea {
   publication?: "published" | "unpublished" | "archived";
   featured?: boolean;
   history?: RecordEvent[];
+  institutionId?: string;
+  /**
+   * How the viewer can see this record: as a member, through a disclosure, through the public summary only,
+   * or (administrators) through the metadata index without confidential fields.
+   */
+  access?: "member" | "disclosed" | "public_summary" | "admin_index";
+  memberCount?: number;
 }
 
 export interface RecordEvent {
@@ -201,6 +224,7 @@ export interface Post {
 export interface Comment {
   id: string;
   targetId: string;
+  targetType?: "post" | "idea";
   authorId: string;
   body: string;
   createdAt: string;
@@ -354,6 +378,10 @@ export interface ResearchReport {
   runStatus?: "completed" | "failed";
   failureReason?: string;
   archived?: boolean;
+  /** Administrators see metadata only until they open the report with a recorded reason. */
+  adminIndexOnly?: boolean;
+  findingCount?: number;
+  sourceCount?: number;
 }
 
 export type EvidenceType =
@@ -397,6 +425,9 @@ export interface ValidationWorkspace {
   evidence: EvidenceItem[];
   openQuestions: { id: string; text: string; resolved: boolean }[];
   updatedAt: string;
+  workspaceId?: string;
+  adminIndexOnly?: boolean;
+  counts?: { sectionsDone: number; evidence: number; peopleEvidence: number; frameworkEvidence: number; downgraded: number };
 }
 
 export interface Notification {
@@ -516,8 +547,38 @@ export interface Institution {
   documents: FileMeta[];
   programmes: { id: string; name: string; status: string; participants: number }[];
   request?: { submittedAt: string; submittedBy: string; note: string };
+  members?: { personId: string; memberRole: string; status: string; joinedAt: string }[];
   createdAt: string;
   demo: boolean;
+}
+
+/** A member's request to register an institution or to be its representative/administrator. */
+export interface InstitutionRequest {
+  id: string;
+  requestType: "register_institution" | "representative_access" | "administrator_access";
+  institutionId?: string;
+  proposedName?: string;
+  proposedKind?: string;
+  requesterId: string;
+  position?: string;
+  note: string;
+  status: "pending" | "approved" | "rejected" | "withdrawn";
+  createdAt: string;
+}
+
+/** An invited expert review of a venture. Accepting grants the reviewer access; finishing revokes it. */
+export interface ExpertReview {
+  id: string;
+  ideaId: string;
+  ideaTitle: string;
+  reviewerId: string;
+  requestedBy: string;
+  note: string;
+  status: "requested" | "accepted" | "declined" | "completed" | "cancelled";
+  feedback?: string;
+  recommendation?: "proceed" | "revise" | "reconsider";
+  dueOn?: string;
+  createdAt: string;
 }
 
 export interface ModerationReport {

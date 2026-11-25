@@ -71,7 +71,7 @@ export const PRIMARY_NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 export const ROLE_NAV: NavItem[] = [
   { href: "/reviews", label: "Review requests", icon: ClipboardCheck, roles: ["expert", "mentor"] },
   { href: "/studies", label: "Research studies", icon: MessagesSquare, roles: ["participant"] },
-  { href: "/institution", label: "Institution", icon: Building2, roles: ["institution_admin"] },
+  { href: "/institution", label: "Institution", icon: Building2, roles: ["institution_admin", "institution_rep"] },
   { href: "/admin", label: "Admin console", icon: ShieldCheck, roles: ["platform_admin"] },
 ];
 

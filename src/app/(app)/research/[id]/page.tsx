@@ -16,7 +16,7 @@ function Report() {
   const router = useRouter();
   const report = useAppState().research.find((r) => r.id === id);
   if (!report) {
-    return <EmptyState art={<LensArt size={52} />} title="Report not found" body="It may have been deleted from this browser." action={<ButtonLink href="/research">Open AI Researcher</ButtonLink>} />;
+    return <EmptyState art={<LensArt size={52} />} title="Report not found" body="It may have been deleted, or it isn’t shared with you." action={<ButtonLink href="/research">Open AI Researcher</ButtonLink>} />;
   }
   return (
     <>

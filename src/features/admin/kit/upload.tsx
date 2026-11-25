@@ -161,7 +161,7 @@ export function AdminFileField({
         </p>
       ) : (
         <p id={`${id}-hint`} className="text-meta text-mute">
-          {hint ?? "Files stay in this browser tab until secure storage is connected. Only the file name, type and size are saved with the record."}
+          {hint ?? "Admin file attachments aren’t stored yet. Only the file name, type and size are recorded."}
         </p>
       )}
     </div>

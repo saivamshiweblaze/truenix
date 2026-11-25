@@ -31,7 +31,7 @@ import { RecordTabs, useTabParam } from "../kit/record-tabs";
 
 type Tab = "general" | "features" | "taxonomy" | "moderation" | "notifications" | "security" | "data";
 
-const NotEnforced = () => <p className="mt-3 text-micro text-mute">Saved and logged. Enforcement needs the Phase 2 server.</p>;
+const NotEnforced = () => <p className="mt-3 text-micro text-mute">Saved and logged. Not yet enforced automatically.</p>;
 
 function NumberSetting({ label, value, min, max, unit, onSave, disabled }: { label: string; value: number; min: number; max: number; unit: string; onSave: (n: number) => void; disabled?: boolean }) {
   const [v, setV] = useState(String(value));
@@ -156,9 +156,9 @@ function DataPanel() {
           <Download size={15} aria-hidden /> Export platform data
         </Button>
       </Block>
-      <Block title="Import" description="Replaces the platform data set with a previous TRUEVIX export. The file is validated before anything changes.">
+      <Block title="Import" description="Not available on the production database: a bulk import would bypass per-record validation, ownership and the audit trail. Use the Supabase migration and seed tooling for data loads.">
         <input ref={file} type="file" accept=".json,application/json" className="sr-only" id="import-file" onChange={(e) => onImport(e.target.files?.[0])} />
-        <Button variant="secondary" disabled={!can("settings", "edit")} onClick={() => file.current?.click()}>
+        <Button variant="secondary" disabled onClick={() => file.current?.click()}>
           <Upload size={15} aria-hidden /> Choose export file
         </Button>
         {importError && (
@@ -190,30 +190,30 @@ function DataPanel() {
           <p className="text-meta text-sub">Nothing is archived.</p>
         )}
       </Block>
-      <Block title="Reset demonstration data" description="For testing. Rebuilds every seeded record from the seed files.">
+      <Block title="Remove demo data" description="Deletes every record marked as demo (seeded for the internal beta).">
         <p className="mb-3 max-w-2xl text-ui text-charcoal">
-          Members, ideas, posts, opportunities, applications, organisations, content and settings return to their seeded state. Your own signed-in account, drafts and the audit log are kept, and the reset is recorded. There is
-          intentionally no option to delete all member data.
+          Demo ideas, posts, opportunities, studies, research, organisations and notifications are deleted. Real members’ records are never touched, and the demo test accounts themselves are removed separately with the bootstrap
+          script. The removal is recorded in the audit log. There is intentionally no option to delete all member data.
         </p>
         <Button
           variant="secondary"
           disabled={!can("settings", "delete")}
           onClick={() =>
             confirm.ask({
-              title: "Reset demonstration data?",
-              consequences: ["Every change made to seeded records in this browser is undone.", "Records you created in the admin portal (opportunities, organisations, announcements) are removed.", "The audit log is kept."],
-              confirmLabel: "Reset data",
+              title: "Remove all demo data?",
+              consequences: ["Every record marked as demo is permanently deleted from the database.", "Real members’ records are not affected.", "The audit log is kept."],
+              confirmLabel: "Remove demo data",
               danger: true,
               reason: "required",
               typeToConfirm: "RESET",
               onConfirm: (reason) => {
                 adminResetDemoData(reason);
-                toast("Demonstration data reset");
+                toast("Removing demo data…");
               },
             })
           }
         >
-          Reset to seed data
+          Remove demo data
         </Button>
       </Block>
       {confirm.dialog}
@@ -277,7 +277,7 @@ export function SettingsPage() {
               Save identity
             </Button>
           </Block>
-          <Block title="Maintenance mode" description="Shows a notice on every public and member page. Sign-in and data stay available in this phase.">
+          <Block title="Maintenance mode" description="Shows a notice on every public and member page. Sign-in and data stay available.">
             <div className="divide-y divide-line border-y border-line">
               <Switch label="Maintenance notice" description="Turn on before planned work." checked={c.maintenance.enabled} onChange={(v) => sw(() => adminUpdateConfig("maintenance", { enabled: v }))()} />
             </div>
@@ -294,7 +294,7 @@ export function SettingsPage() {
         <Block title="Feature settings" className="max-w-3xl">
           <div className="divide-y divide-line border-y border-line">
             <Switch label="Open registration" description="Allow anyone to create an account." checked={s.admin.settings.openRegistration} onChange={(v) => sw(() => adminUpdateSettings({ openRegistration: v }))()} />
-            <Switch label="Review public ideas before listing" description="New public ideas wait in the review queue until approved. Enforced in this browser." checked={s.admin.settings.requireIdeaReview} onChange={(v) => sw(() => adminUpdateSettings({ requireIdeaReview: v }))()} />
+            <Switch label="Review public ideas before listing" description="New public ideas wait in the review queue until approved. Enforced by the database." checked={s.admin.settings.requireIdeaReview} onChange={(v) => sw(() => adminUpdateSettings({ requireIdeaReview: v }))()} />
             <Switch label="AI Researcher available" description="Show the research workspace to members." checked={s.admin.settings.researchEnabled} onChange={(v) => sw(() => adminUpdateSettings({ researchEnabled: v }))()} />
             <Switch label="Community posting" description="Members can publish posts in Discover." checked={c.features.communityPosting} onChange={(v) => sw(() => adminUpdateConfig("features", { communityPosting: v }))()} />
             <Switch label="Registration for opportunities on TRUEVIX" description="Members can register for listings run on TRUEVIX." checked={c.features.opportunityRegistration} onChange={(v) => sw(() => adminUpdateConfig("features", { opportunityRegistration: v }))()} />
@@ -347,7 +347,7 @@ export function SettingsPage() {
             )}
             <p className="mt-3 text-micro text-mute">Hiding a skill removes it from suggestions; members who already list it keep it.</p>
           </Block>
-          <Block title="Fixed lists" description="These lists are part of the data model. Changing them needs a code release in this phase; Phase 2 moves them to the database.">
+          <Block title="Fixed lists" description="These lists are part of the data model. Changing them needs a code release.">
             <div className="flex flex-col gap-4 text-meta">
               <div>
                 <p className="font-medium text-ink">Industries ({INDUSTRIES.length})</p>
@@ -417,11 +417,11 @@ export function SettingsPage() {
           <dl className="mt-6 flex flex-col gap-3 text-ui">
             <div>
               <dt className="font-medium">Multi-factor sign-in for administrators</dt>
-              <dd className="text-meta text-sub">Not available yet. Requires the Phase 2 identity provider. It will be mandatory for every admin role.</dd>
+              <dd className="text-meta text-sub">Not available yet. Supabase Auth supports it; it will be required for every admin role before public launch.</dd>
             </div>
             <div>
               <dt className="font-medium">Passwords and tokens</dt>
-              <dd className="text-meta text-sub">Never stored in this browser and never shown in the admin portal.</dd>
+              <dd className="text-meta text-sub">Handled by the account service (hashed). Never stored by TRUEVIX or shown in the admin portal.</dd>
             </div>
           </dl>
           <NotEnforced />

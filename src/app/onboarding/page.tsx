@@ -13,6 +13,10 @@ import { SessionGate } from "@/components/shell/session-gate";
 import { BlueprintArt, BulbArt, CollabArt, CompassArt, FlaskArt, FounderArt, NetworkArt, PathArt } from "@/components/illustrations/art";
 import { JourneyLine } from "@/components/illustrations/journey-line";
 import { completeOnboarding } from "@/lib/store/actions";
+import { toast } from "@/components/ui/toast";
+import { getTransientFile, removeTransientFile } from "@/lib/store/transient-files";
+import { uploadFile } from "@/lib/data/files";
+import { reloadAppData } from "@/lib/data/session";
 import { useAppState } from "@/lib/store/store";
 import { phoneVerification } from "@/lib/services/phone-verification";
 import { fieldErrors, phoneSchema } from "@/lib/validation";
@@ -88,8 +92,9 @@ function Onboarding() {
           return;
         }
       }
-      completeOnboarding(toUserPatch(role, values, user));
+      const patch = toUserPatch(role, values, user);
       setDone(true);
+      void finishOnboarding(patch);
       return;
     }
     go(step + 1);
@@ -222,7 +227,7 @@ function Onboarding() {
         </AnimatePresence>
 
         <div className="mt-8 flex flex-col-reverse items-stretch justify-between gap-3 border-t border-line pt-5 sm:flex-row sm:items-center">
-          <span className="text-meta text-mute">Profile details are saved in this browser. Attached files are not saved.</span>
+          <span className="text-meta text-mute">Profile details are saved to your account when you finish.</span>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center">
             {current && current.fields.every((f) => !isVisible(f, values) || isOptional(f, values)) && current.fields.some((f) => f.kind === "chips") && (
               <Button variant="ghost" size="lg" onClick={next}>
@@ -367,6 +372,20 @@ function Done({ role, values, firstName, onGo }: { role: OnboardingRole; values:
       </div>
     </motion.div>
   );
+}
+
+/** Saves the profile, then uploads any attached photo/resume to secure storage (verified on the server). */
+async function finishOnboarding(patch: ReturnType<typeof toUserPatch>) {
+  await completeOnboarding(patch);
+  const uploads: [string, "avatar" | "resume"][] = [["photo", "avatar"], ["resume", "resume"]];
+  for (const [slot, purpose] of uploads) {
+    const file = getTransientFile(slot);
+    if (!file) continue;
+    const res = await uploadFile(file, purpose);
+    if (!res.ok) toast(slot === "photo" ? "Photo not saved" : "Resume not saved", { body: res.error });
+    else removeTransientFile(slot);
+  }
+  void reloadAppData();
 }
 
 export default function OnboardingPage() {

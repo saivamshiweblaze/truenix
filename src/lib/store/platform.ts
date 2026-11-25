@@ -96,6 +96,9 @@ export interface PlatformState {
   myAdminRole: AdminRoleId;
   rolePermissions: Record<AdminRoleId, Partial<Record<AdminModuleId, AdminPermission[]>>>;
   config: PlatformConfig;
+  expertReviews?: import("@/lib/types").ExpertReview[];
+  institutionRequests?: import("@/lib/types").InstitutionRequest[];
+  publicSettings?: import("./state").PublicSettings;
 }
 
 export const SEED_VERSION = 1;
@@ -198,6 +201,35 @@ export function seedPlatform(): PlatformState {
     rolePermissions: defaultRolePermissions(),
     config: defaultConfig(),
   });
+}
+
+/** Platform slice before any data has loaded (and after sign-out). Filled from Supabase by lib/data/load.ts. */
+export function emptyPlatform(): PlatformState {
+  return {
+    seedVersion: SEED_VERSION,
+    people: [],
+    accounts: [],
+    ideas: [],
+    posts: [],
+    comments: [],
+    opportunities: [],
+    registrations: [],
+    institutions: [],
+    reports: [],
+    talent: [],
+    mentorships: [],
+    studies: [],
+    participations: [],
+    collaborations: [],
+    research: [],
+    validations: {},
+    announcements: [],
+    cms: [],
+    adminTeam: [],
+    myAdminRole: "analyst",
+    rolePermissions: defaultRolePermissions(),
+    config: defaultConfig(),
+  };
 }
 
 /** Skills offered in selectors: the built-in list plus custom entries, minus hidden ones. */

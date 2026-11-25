@@ -26,7 +26,7 @@ import { RecordTabs, useTabParam } from "../kit/record-tabs";
 
 const STATUS_ACTIONS: { status: AccountStatus; label: string; consequence: string }[] = [
   { status: "active", label: "Reactivate", consequence: "The member regains full access and appears in Community and search again." },
-  { status: "restricted", label: "Restrict", consequence: "The member keeps their account but is marked restricted: posting and messaging are limited (enforced server-side in Phase 2)." },
+  { status: "restricted", label: "Restrict", consequence: "The member keeps their account but is marked restricted: they can sign in and read, but can’t post, comment or message (enforced by the database)." },
   { status: "suspended", label: "Suspend", consequence: "The member’s profile, posts and ideas are hidden from other members until reactivated. Nothing is deleted." },
   { status: "deactivated", label: "Deactivate", consequence: "The account is closed and hidden. Records are kept for the retention period and can be restored." },
 ];
@@ -415,7 +415,7 @@ export function UserDetail({ id }: { id: string }) {
                     toast(`Role changed to ${roleLabel(e.target.value as RoleId)}`);
                   }}
                   options={ROLES.map((r) => ({ value: r.id, label: r.label }))}
-                  hint="Changes what the member sees. Not an access-control boundary in this phase."
+                  hint="Self-service persona only. Privileged roles are granted from Admin roles or institution requests."
                 />
               </div>
             )}
@@ -432,7 +432,7 @@ export function UserDetail({ id }: { id: string }) {
                 { label: "Internal note", private: true, value: a.adminNote, wide: true },
               ]}
             />
-            <p className="mt-4 text-micro text-mute">Passwords and session tokens are never stored or shown. Sign-in in this phase is browser-local.</p>
+            <p className="mt-4 text-micro text-mute">Passwords and session tokens are handled by the account service and are never shown here.</p>
           </Block>
         </div>
       )}

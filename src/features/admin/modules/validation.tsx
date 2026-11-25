@@ -16,6 +16,7 @@ import { AdminStatus } from "../kit/status";
 import { DataTable, type Column } from "../kit/data-table";
 import { useCan } from "../kit/can";
 import { useConfirm } from "../kit/confirm";
+import { RevealGate } from "../kit/reveal-gate";
 import { Button } from "@/components/ui/button";
 
 interface Row {
@@ -34,8 +35,16 @@ const workspaces = (s: AppState): Row[] => {
   });
 };
 
-const count = (ws: ValidationWorkspace, t: EvidenceType) => ws.evidence.filter((e) => e.type === t).length;
-const doneCount = (ws: ValidationWorkspace) => Object.values(ws.sections).filter((x) => x.status === "done").length;
+/** Unopened workspaces carry only aggregate counts from the metadata index. */
+const count = (ws: ValidationWorkspace, t: EvidenceType) =>
+  ws.adminIndexOnly && ws.counts
+    ? t === "ai_analysis"
+      ? ws.counts.frameworkEvidence
+      : t === "customer_response"
+        ? ws.counts.peopleEvidence
+        : 0
+    : ws.evidence.filter((e) => e.type === t).length;
+const doneCount = (ws: ValidationWorkspace) => (ws.adminIndexOnly && ws.counts ? ws.counts.sectionsDone : Object.values(ws.sections).filter((x) => x.status === "done").length);
 
 /** Evidence groups in order of strength. Customer and experiment evidence are kept visually apart from analysis. */
 const GROUPS: { title: string; types: EvidenceType[]; note: string }[] = [
@@ -136,6 +145,7 @@ export function ValidationDetail({ ideaId }: { ideaId: string }) {
       />
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-8">
+          <RevealGate kind="validation" recordId={ws.workspaceId ?? ""} ideaId={ideaId} locked={!!ws.adminIndexOnly} what="validation workspace">
           {GROUPS.map((g) => {
             const items = ws.evidence.filter((e) => g.types.includes(e.type));
             return (
@@ -172,6 +182,7 @@ export function ValidationDetail({ ideaId }: { ideaId: string }) {
               </Block>
             );
           })}
+          </RevealGate>
         </div>
         <div className="flex min-w-0 flex-col gap-8">
           <Block title="Twelve validation areas">

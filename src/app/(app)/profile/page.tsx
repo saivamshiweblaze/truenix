@@ -14,6 +14,7 @@ import { ProfileView } from "@/features/community/profile-view";
 import { SectionHeading } from "@/components/ui/primitives";
 import { ButtonLink } from "@/components/ui/button";
 import { useTransientFile } from "@/lib/store/transient-files";
+import { openFile } from "@/lib/data/files";
 import { displayValue, flowFor, isVisible, onboardingRoleFor } from "@/features/onboarding/config";
 import { preferenceLabel, preferencesFor, readPreferences } from "@/features/preferences/preferences";
 import { formatBytes } from "@/lib/validation";
@@ -58,7 +59,7 @@ export default function MyProfilePage() {
         person={me}
         ideas={s.ideas.filter((i) => i.status === "submitted")}
         posts={feedPosts(s).filter((p) => p.authorId === "me")}
-        photo={photo?.url}
+        photo={photo?.url ?? user.avatarUrl}
         details={
           <>
             <PreferenceSummary />
@@ -158,9 +159,16 @@ function RoleDetails({ resumeHeld }: { resumeHeld: boolean }) {
           <div>
             <dt className="text-sub">Resume</dt>
             <dd className="text-ink">
-              {doc.name} <span className="text-mute">· {formatBytes(doc.size)}</span>
+              {doc.storage === "stored" && doc.id ? (
+                <button type="button" className="underline underline-offset-4 hover:text-ink" onClick={() => void openFile(doc.id!)}>
+                  {doc.name}
+                </button>
+              ) : (
+                doc.name
+              )}{" "}
+              <span className="text-mute">· {formatBytes(doc.size)}</span>
               <p className="mt-0.5 text-mute">
-                {resumeHeld ? "Held in this tab only — it isn’t stored." : "Not stored. You’ll be asked to upload it again once secure storage is available."}
+                {doc.storage === "stored" ? "Stored privately. Only you and user administrators can open it." : resumeHeld ? "Uploading…" : "Not uploaded."}
               </p>
             </dd>
           </div>

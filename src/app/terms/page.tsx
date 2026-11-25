@@ -23,9 +23,9 @@ export default function TermsPage() {
           heading: "How accounts work in this release",
           body: (
             <ul>
-              <li>Your account, profile and work are stored in this browser only. They are not sent to our servers and are not available on other devices.</li>
-              <li>Email addresses and phone numbers are not yet verified, and no email or text message is sent.</li>
-              <li>Files you attach, such as a resume or photo, are held in the open browser tab only and are discarded when you reload or sign out.</li>
+              <li>Your account, profile and work are stored in {brand.productName}’s database and are available wherever you sign in.</li>
+              <li>You confirm your email address when you register. Phone numbers are not verified, and no text messages are sent.</li>
+              <li>{brand.productName} is in beta. Features, limits and these terms may change before public launch.</li>
             </ul>
           ),
         },
